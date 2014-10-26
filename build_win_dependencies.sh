@@ -25,19 +25,19 @@ set -x
 #               B U I L D    S E T T I N G S 
 # ----------------------------------------------------------------------- #
 
-if [ ! -f ./../dependencies.sh ] ; then
-    echo "Create ./../dependencies.sh with the list of libraries you want to build."
+if [ ! -f ./dependencies.sh ] ; then
+    echo "Create ./dependencies.sh with the list of libraries you want to build."
     exit
 fi
 
-. ./../dependencies.sh
+. ./dependencies.sh
 
 # You can define these dependencies
 # -----------------------------------------------------------------------# 
 
 # build_libuv=n
 # build_yasm=n
-# build_x264=n            # needs yasm, perl
+# build_x264=n             # needs yasm, perl
 # build_videogenerator=n
 # build_lame=n
 # build_openssl=n
@@ -49,9 +49,10 @@ fi
 # build_tinylib=y
 # build_glfw=y
 # build_libz=y
-# build_png=y            # needs zlib  
+# build_libpng=y            # needs zlib  
 # build_tinylib=y
-# build_remoxly=y        # needs tinylib
+# build_remoxly=y           # needs tinylib
+# build_freetype=y
 
 # ----------------------------------------------------------------------- #
 #                E N V I R O N M E N T  V A R I A B L E S 
@@ -319,7 +320,7 @@ if [ "${build_libz}" = "y" ] ; then
 fi
 
 # Download libpng
-if [ "${build_png}" = "y" ] ; then
+if [ "${build_libpng}" = "y" ] ; then
     if [ ! -d ${sd}/libpng ] ; then 
         cd ${sd}
         if [ ! -f libpng.tar.gz ] ; then 
@@ -345,6 +346,14 @@ if [ "${build_remoxly}" = "y" ] ; then
         mkdir ${sd}/remoxly
         cd ${sd}/remoxly
         git clone git@github.com:roxlu/remoxly.git .
+    fi
+fi
+
+# Download freetype
+if [ "${build_freetype}" ] ; then 
+    if [ ! -d ${sd}/freetype2 ] ; then 
+        cd ${sd}
+        git clone --depth 1 --branch master git://git.sv.nongnu.org/freetype/freetype2.git
     fi
 fi
 
@@ -552,8 +561,8 @@ if [ "${build_libz}" = "y" ] ; then
 fi
 
 # Compile libpng
-if [ "${build_png}" = "y" ] ; then
-    if [ ! -f ${bd}/lib/libpng12_static.lib ] ; then
+if [ "${build_libpng}" = "y" ] ; then
+    if [ ! -f ${bd}/lib/libpng16_static.lib ] ; then
         cd ${sd}/libpng 
         if [ -d build.release ] ; then
             rm -r build.release
@@ -576,7 +585,7 @@ if [ "${build_remoxly}" = "y" ] ; then
     if [ ! -f ${bd}/lib/remoxly.lib ] ; then
         cd ${sd}/remoxly/projects/gui/build
 
-        if [ -d build.release ] ; then
+        if [ ! -d build.release ] ; then
             rm -r build.release
             mkdir build.release
         fi
@@ -592,3 +601,20 @@ if [ "${build_remoxly}" = "y" ] ; then
         cmake --build . --target install --config Release
     fi
 fi
+
+if [ "${build_freetype}" ] ; then 
+    if [ ! -f ${bd}/lib/freetype.lib ] ; then
+        cd ${sd}/freetype2 
+
+        if [ ! -d build.release ] ; then 
+            mkdir build.release
+        fi
+
+        cd build.release 
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=Off \
+            ../
+        cmake --build . --target install --config Release
+    fi
+fi 
