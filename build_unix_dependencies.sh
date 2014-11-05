@@ -36,6 +36,11 @@ fi
 
 # You can define these dependencies
 # -----------------------------------------------------------------------# 
+#
+# Export one of the following architectures in your dependencies.sh 
+#  - architecture="i386"
+#  - architecture="x86_64"
+#
 # build_m4=n
 # build_autoconf=n        # needs an updated m4 
 # build_libtool=n
@@ -105,21 +110,41 @@ tri_arch=""
 tri_compiler=""
 tri_platform=""
 tri_triplet=""
+extra_cflags=""
+extra_ldflags=""
+cmake_osx_architectures=""
+
+if [ "${architecture}" = "x86_64" ] or [ "${architecture}" = "" ] ; then 
+    tri_arch="x86_64"
+    extra_cflags=" -m64 -arch x86_64"
+    extra_ldflags=" -arch x86_64 "
+else
+    tri_arch="i386"
+    extra_cflags=" -m32 -arch i386 "
+    extra_ldflags=" -arch i386 "
+fi
 
 if [ "$(uname)" = "Darwin" ]; then
     is_mac=y
     tri_platform="mac"
-    tri_arch="x86_64"
     tri_compiler="clang"
 elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     is_linux=y
     tri_platform="linux"
-    tri_arch="x86_64"
     tri_compiler="gcc"
 elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
     echo "Windows not yet supported."
     exit
 fi
+
+if [ "${is_mac}" = "y" ] ; then
+    if [ "${architecture}" = "x86_64" ] ; then
+        cmake_osx_architectures="-DCMAKE_OSX_ARCHITECTURES=x86_64"
+    else
+        cmake_osx_architectures="-DCMAKE_OSX_ARCHITECTURES=i386"
+    fi
+fi
+
 
 tri_triplet="${tri_platform}-${tri_compiler}-${tri_arch}"
 
@@ -132,12 +157,12 @@ cflagsorig=${CFLAGS}
 ldflagsorig=${LDFLAGS}
 pathorig=${PATH}
 export PATH=${bd}/bin/:${sd}/gyp/:${PATH}
-export CFLAGS="-I${bd}/include"
-export LDFLAGS="-L${bd}/lib"
+export CFLAGS="-I${bd}/include ${extra_cflags}"
+export CXXFLAGS=${CFLAGS}
+export LDFLAGS="-L${bd}/lib ${extra_ldflags}"
 cfcopy=${CFLAGS}
 ldcopy=${LDFLAGS}
 pathcopy=${PATH}
-
 
 # ----------------------------------------------------------------------- #
 #                          F U N C T I O N S  
@@ -1002,11 +1027,16 @@ fi
 if [ "${build_libz}" = "y" ] ; then 
     if [ ! -f ${bd}/lib/libz.a ] ; then 
         cd ${sd}/zlib
-        ./configure --prefix=${bd} --static --64
+        if [ "${architecture}" = "i386" ] ; then 
+            ./configure --prefix=${bd} --static --archs="-arch i386"
+        else
+            ./configure --prefix=${bd} --static --64
+        fi
         make
         make install
     fi
 fi
+
 
 # Compile libpng
 if [ "${build_libpng}" = "y" ] ; then 
@@ -1064,12 +1094,14 @@ if [ "${build_glfw}" = "y" ] ; then
         export CFLAGS=""
         export LDFLAGS=""
 
+
         cd build
         cmake \
             -DCMAKE_INSTALL_PREFIX=${bd} \
             -DGLFW_BUILD_TESTS=No \
             -DGLFW_BUILD_EXAMPLES=No \
             -DGLFW_BUILD_DOCS=No \
+            ${cmake_osx_architectures} \
             ..
         cmake --build . --target install
 
@@ -1313,10 +1345,19 @@ if [ "${build_freetype}" = "y" ] ; then
         ln -s libtoolize glibtoolize
         cd ${sd}/freetype2
 
-        ./autogen.sh
-        ./configure --prefix=${bd}
-        make
-        make install
+        
+        if [ -d ${sd}/freetype2/build ] ; then 
+            rm -rf ${sd}/freetype2/build
+        fi
+        mkdir ${sd}/freetype2/build
+        cd ${sd}/freetype2/build
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=Off \
+            ${cmake_osx_architectures} \
+            ../
+        cmake --build . --target install --config Release
         
         export PATH=${pathcopy}
         export CFLAGS=${cfcopy}
@@ -1647,19 +1688,20 @@ if [ "${build_remoxly}" = "y" ] ; then
         fi
         mkdir build.release
         cd build.release 
-#        export CFLAGS="${CFLAGS} -I${sd}/tinylib/src/"
         export CFLAGS=""
+        export LDFLAGS=""
 
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -DEXTERN_LIB_DIR=${bd}/lib \
             -DEXTERN_INC_DIR=${bd}/include \
             -DEXTERN_SRC_DIR=${bd}/src \
             -DTINYLIB_DIR=${d}/sources/tinylib \
+            -DCMAKE_OSX_ARCHITECTURES=${architecture} \
             -DCMAKE_BUILD_TYPE=Release ..
+
         cmake --build . --target install --config Release
     fi
 fi
-
 
 if [ "${build_h264bitstream}" = "y" ] ; then
     cd ${sd}/h264bitstream
