@@ -53,6 +53,7 @@ fi
 # build_tinylib=y
 # build_remoxly=y           # needs tinylib
 # build_freetype=y
+# build_curl=y
 
 # ----------------------------------------------------------------------- #
 #                E N V I R O N M E N T  V A R I A B L E S 
@@ -357,6 +358,16 @@ if [ "${build_freetype}" ] ; then
     fi
 fi
 
+# Download libcurl 
+if [ "${build_curl}" = "y" ] ; then
+    if [ ! -d ${sd}/curl ] ; then
+        cd ${sd}
+        curl -o curl.tar.gz http://curl.haxx.se/download/curl-7.37.1.tar.gz
+        tar -zxvf curl.tar.gz
+        mv curl-7.37.1 curl
+    fi
+fi
+
 # ----------------------------------------------------------------------- #
 #                C O M P I L E   D E P E N D E N C I E S 
 # ----------------------------------------------------------------------- #
@@ -611,6 +622,7 @@ if [ "${build_freetype}" ] ; then
         fi
 
         cd build.release 
+
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=Off \
@@ -618,3 +630,22 @@ if [ "${build_freetype}" ] ; then
         cmake --build . --target install --config Release
     fi
 fi 
+
+# Compile libcurl 
+if [ "${build_curl}" = "y" ] ; then 
+    if [ ! -f ${bd}/lib/libcurl.a ] ; then
+        cd ${sd}/curl
+
+        if [ ! -d build.release ] ; then 
+            mkdir build.release
+        fi
+
+        cd build.release 
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCURL_STATICLIB=On \
+            ../
+        cmake --build . --target install --config Release
+    fi
+fi
