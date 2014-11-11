@@ -53,7 +53,7 @@ fi
 # build_tinylib=y
 # build_remoxly=y           # needs tinylib
 # build_freetype=y
-# build_curl=y
+# build_curl=y              # we build a static lib, make sure to add a define `CURL_STATICLIB` in the project which uses the library on windows!  
 
 # ----------------------------------------------------------------------- #
 #                E N V I R O N M E N T  V A R I A B L E S 
@@ -645,6 +645,7 @@ if [ "${build_curl}" = "y" ] ; then
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -DCMAKE_BUILD_TYPE=Release \
             -DCURL_STATICLIB=On \
+            -DCURL_DISABLE_LDAP=On \
             ../
         cmake --build . --target install --config Release
     fi
