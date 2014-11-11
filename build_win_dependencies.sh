@@ -184,7 +184,7 @@ fi
 if [ ! -d ${sd}/cmakefiles ] ; then
     mkdir ${sd}/cmakefiles
     cd ${sd}/cmakefiles
-    git clone git@bitbucket.org:roxlu/cmake.git .
+    git clone https://roxlu@bitbucket.org/roxlu/cmake.git .
 fi
 
 # Download libuv
@@ -288,6 +288,9 @@ if [ "${build_glad}" = "y" ] ; then
     if [ ! -d ${sd}/glad ] ; then 
         cd ${sd}
         git clone --depth 1 --branch master https://github.com/Dav1dde/glad.git glad
+	#git clone https://github.com/Dav1dde/glad.git glad
+	#cd glad 
+	#git checkout e8b209c109fa03cad5b004b04fdbe027e1a88fcd
     fi
 fi
 
@@ -520,7 +523,8 @@ if [ "${build_glad}" = "y" ] ; then
             mkdir ${bd}/src 
         fi
         cd ${sd}/glad
-        python main.py --generator=c --out-path=gl --extensions GL_ARB_timer_query,GL_APPLE_rgb_422
+        #python main.py --generator=c --out-path=gl --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422
+        python main.py --generator=c --out-path=gl 
 
         cp -r ${sd}/glad/gl/include/glad ${bd}/include/
         cp -r ${sd}/glad/gl/include/KHR ${bd}/include/
