@@ -61,7 +61,7 @@ fi
 
 d=${PWD}
 sd=${d}/sources
-bd=${d}/../extern/win-vs2012-x86_64/
+bd=${d}/../extern/win-vs2012-${architecture}/
 id=${d}/install/
 perl_path=${d}/tools/perl/bin/
 nasm_path=${d}/tools/nasm/
