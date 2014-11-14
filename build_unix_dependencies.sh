@@ -9,7 +9,7 @@
 #
 #  Get the latest version of this file from: 
 #
-#        https://gist.github.com/roxlu/1322204eabbd5d42c2d0
+#        https://github.com/roxlu/dependencies
 #
 #  ********************************************************************** *
 #
@@ -103,55 +103,6 @@ fi
 # ----------------------------------------------------------------------- #
 
 set -x
-
-is_mac=n
-is_linux=n
-tri_arch=""
-tri_compiler=""
-tri_platform=""
-tri_triplet=""
-extra_cflags=""
-extra_ldflags=""
-cmake_osx_architectures=""
-
-if [ "${architecture}" = "x86_64" ] or [ "${architecture}" = "" ] ; then 
-    tri_arch="x86_64"
-    extra_cflags=" -m64 -arch x86_64"
-    extra_ldflags=" -arch x86_64 "
-else
-    tri_arch="i386"
-    extra_cflags=" -m32 -arch i386 "
-    extra_ldflags=" -arch i386 "
-fi
-
-if [ "$(uname)" = "Darwin" ]; then
-    is_mac=y
-    tri_platform="mac"
-    tri_compiler="clang"
-elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
-    is_linux=y
-    tri_platform="linux"
-    tri_compiler="gcc"
-elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
-    echo "Windows not yet supported."
-    exit
-fi
-
-if [ "${is_mac}" = "y" ] ; then
-    if [ "${architecture}" = "x86_64" ] ; then
-        cmake_osx_architectures="-DCMAKE_OSX_ARCHITECTURES=x86_64"
-    else
-        cmake_osx_architectures="-DCMAKE_OSX_ARCHITECTURES=i386"
-    fi
-fi
-
-
-tri_triplet="${tri_platform}-${tri_compiler}-${tri_arch}"
-
-d=${PWD}
-sd=${d}/sources
-bd=${d}/../extern/${tri_triplet}
-id=${d}/../extern/${tri_triplet}/include
 
 cflagsorig=${CFLAGS}
 ldflagsorig=${LDFLAGS}

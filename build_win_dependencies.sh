@@ -9,7 +9,7 @@ set -x
 #
 #  Get the latest version of this file from: 
 #
-#        https://gist.github.com/roxlu/1322204eabbd5d42c2d0
+#        https://github.com/roxlu/dependencies
 #
 #  ********************************************************************** *
 # This script can compile several libraries on Windows. We try to keep 
@@ -30,7 +30,8 @@ if [ ! -f ./dependencies.sh ] ; then
     exit
 fi
 
-. ./dependencies.sh
+
+source ./dependencies.sh
 
 # You can define these dependencies
 # -----------------------------------------------------------------------# 
@@ -61,8 +62,6 @@ fi
 
 d=${PWD}
 sd=${d}/sources
-bd=${d}/../extern/win-vs2012-x86_64/
-id=${d}/install/
 perl_path=${d}/tools/perl/bin/
 nasm_path=${d}/tools/nasm/
 cygw_path=${d}/tools/cygwin/
@@ -382,7 +381,10 @@ if [ "${build_libuv}" = "y" ] ; then
         
         mkdir build.release 
         cd build.release
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${bd} ../
+        cmake -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${bd} \
+            -G "${cmake_generator}" \
+            ../
         cmake --build . --target install 
     fi
 fi
@@ -424,7 +426,10 @@ if [ "${build_x264}" = "y" ] ; then
         
         mkdir build.release 
         cd build.release
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${bd} ../
+        cmake -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${bd} \
+            -G "${cmake_generator}" \
+            ../
         cmake --build . --config Release --target install
     fi
 fi
@@ -438,7 +443,10 @@ if [ "${build_videogenerator}" = "y" ] ; then
             mkdir compiled
         fi
         cd compiled
-        cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release ../
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G "${cmake_generator}" \
+            ../
         cmake --build . --config Release --target install
     fi
 fi
@@ -453,7 +461,10 @@ if [ "${build_lame}" = "y" ] ; then
         fi
 
         cd $build
-        cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release ../
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G "${cmake_generator}" \
+            ../
         cmake --build . --config Release --target install
     fi
 fi
@@ -466,8 +477,12 @@ if [ "${build_portaudio}" = "y" ] ; then
             rm -r ${sd}/portaudio/build
             mkdir ${sd}/portaudio/build
         fi
+
         cd ${sd}/portaudio/build
-        cmake -DCMAKE_INSTALL_PREFIX=${bd} -DPA_DLL_LINK_WITH_STATIC_RUNTIME=True ../
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DPA_DLL_LINK_WITH_STATIC_RUNTIME=True \
+            -G "${cmake_generator}" \
+            ../
         cmake --build . --config Release
         
         cp Release/portaudio_static_x86.lib ${bd}/lib/
@@ -484,7 +499,11 @@ if [ "${build_videocapture}" = "y" ] ; then
         fi
         mkdir build.release
         cd build.release
-        cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release -DUSE_OPENGL=False ..
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUSE_OPENGL=False \
+            -G "${cmake_generator}" \
+            .. 
         cmake --build . --target install --config Release
     fi
 fi
@@ -500,7 +519,10 @@ if [ "${build_libyuv}" = "y" ] ; then
         cd ${sd}/libyuv
         cd build
 
-        cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release ..
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G "${cmake_generator}" \
+            ..
         cmake --build . --target install --config Release
    fi
 fi
@@ -523,8 +545,8 @@ if [ "${build_glad}" = "y" ] ; then
             mkdir ${bd}/src 
         fi
         cd ${sd}/glad
-        #python main.py --generator=c --out-path=gl --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422
-        python main.py --generator=c --out-path=gl 
+        python main.py --generator=c --out-path=gl --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422
+        #python main.py --generator=c --out-path=gl 
 
         cp -r ${sd}/glad/gl/include/glad ${bd}/include/
         cp -r ${sd}/glad/gl/include/KHR ${bd}/include/
@@ -547,15 +569,18 @@ if [ "${build_glfw}" = "y" ] ; then
         ldcopy=${LDFLAGS}
         export CFLAGS=""
         export LDFLAGS=""
-
+#            -G "Visual Studio 11 2012" \
         cd build
-        cmake -DCMAKE_INSTALL_PREFIX=${bd} ..
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+            -G "${cmake_generator}" \
+            ..
         cmake --build . --target install
-
+       echo ${cmake_generator}
         export CFLAGS=${cfcopy}
         export LDFLAGS=${ldcopy}
     fi
 fi
+
 
 # Compile libz
 if [ "${build_libz}" = "y" ] ; then
@@ -570,6 +595,7 @@ if [ "${build_libz}" = "y" ] ; then
             -DCMAKE_INSTALL_PREFIX=${bd} \
             -DAMD64=NO \
             -DASM686=NO \
+            -G "${cmake_generator}" \
             ../
         cmake --build . --target install --config Release
     fi
@@ -590,6 +616,7 @@ if [ "${build_libpng}" = "y" ] ; then
             -DPNG_SHARED=NO \
             -DPNG_TESTS=NO \
             -DPNG_DEBUG=NO \
+            -G "${cmake_generator}" \
             ../
         cmake --build . --target install --config release
     fi        
@@ -612,7 +639,9 @@ if [ "${build_remoxly}" = "y" ] ; then
             -DEXTERN_INC_DIR=${bd}/include \
             -DEXTERN_SRC_DIR=${bd}/src \
             -DTINYLIB_DIR=${d}/sources/tinylib/ \
-            -DCMAKE_BUILD_TYPE=Release ..
+            -DCMAKE_BUILD_TYPE=Release \
+            -G "${cmake_generator}" \
+            ..
         cmake --build . --target install --config Release
     fi
 fi
@@ -630,6 +659,7 @@ if [ "${build_freetype}" ] ; then
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=Off \
+            -G "${cmake_generator}" \
             ../
         cmake --build . --target install --config Release
     fi
@@ -637,9 +667,8 @@ fi
 
 # Compile libcurl 
 if [ "${build_curl}" = "y" ] ; then 
-    if [ ! -f ${bd}/lib/libcurl.a ] ; then
+    if [ ! -f ${bd}/lib/libcurl.lib ] ; then
         cd ${sd}/curl
-
         if [ ! -d build.release ] ; then 
             mkdir build.release
         fi
@@ -650,6 +679,7 @@ if [ "${build_curl}" = "y" ] ; then
             -DCMAKE_BUILD_TYPE=Release \
             -DCURL_STATICLIB=On \
             -DCURL_DISABLE_LDAP=On \
+            -G "${cmake_generator}" \
             ../
         cmake --build . --target install --config Release
     fi

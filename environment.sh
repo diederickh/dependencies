@@ -1,0 +1,169 @@
+#!/bin/bash
+
+# The user can set the following variables before including this file:
+#
+# Windows:
+#    Set what visual studio compiler you want to use
+#    vs="2010"  - For "Visual Studio 10 2010"
+#    vs="2012"  - For "Visual Studio 11 2012"
+#    vs="2013"  - For "Visual Studio 12 2013"
+
+# Make sure the user passes the correct architecture.
+if [ "${1}" = "" ] ; then
+    echo ""
+    echo "Usage: ${0} [32,64]"
+    echo ""
+    echo "Example: compile 32bit version: ./${0} 32"
+    echo "Example: compile 64bit version: ./${0} 64" 
+    exit
+fi
+
+# Detect if we're running on windows, mac, linux.
+is_mac=n
+is_linux=n
+is_win=n
+tri_arch=""
+tri_compiler=""
+tri_platform=""
+tri_triplet=""
+extra_cflags=""
+extra_ldflags=""
+cmake_osx_architectures=""
+cmake_generator="" # is used with the win version
+
+in_arch=${1}
+if [ "${in_arch}" = "32" ] ; then
+    tri_arch="i386"
+elif [ "${in_arch}" = "64" ] ; then 
+    tri_arch="x86_64"
+else
+    echo ""
+    echo "'${in_arch}' is an invalid architecture. Use 32 or 64."
+    echo ""
+    exit
+fi 
+
+# Set CFLAGS / LDFLAGS
+if [ "${architecture}" = "x86_64" ] || [ "${architecture}" = "" ] ; then 
+    extra_cflags=" -m64 -arch x86_64"
+    extra_ldflags=" -arch x86_64 "
+else
+    extra_cflags=" -m32 -arch i386 "
+    extra_ldflags=" -arch i386 "
+fi
+
+# Set platform and compiler
+if [ "$(uname)" = "Darwin" ]; then
+    is_mac=y
+    tri_platform="mac"
+    tri_compiler="clang"
+elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
+    is_linux=y
+    tri_platform="linux"
+    tri_compiler="gcc"
+elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
+    # @todo detect what compiler is used
+    is_win="y"
+
+    if [ "${vs}" = "2010" ] ; then 
+        tri_compiler="vs2010"
+        cmake_generator="Visual Studio 10 2010" 
+    elif [ "${vs}" = "2012" ] ; then
+        tri_compiler="vs2012"
+        cmake_generator="Visual Studio 11 2012"
+
+    elif [ "${vs}" = "2013" ] ; then
+        tri_compiler="vs2013"
+        cmake_generator="Visual Studio 12 2013" 
+    else
+        cmake_generator="Visual Studio 12 2013" 
+        tri_compiler="vs2012"
+    fi
+    tri_platform="win"
+fi
+
+if [ "${is_mac}" = "y" ] ; then
+    if [ "${architecture}" = "x86_64" ] ; then
+        cmake_osx_architectures="-DCMAKE_OSX_ARCHITECTURES=x86_64"
+    else
+        cmake_osx_architectures="-DCMAKE_OSX_ARCHITECTURES=i386"
+    fi
+fi
+
+tri_triplet="${tri_platform}-${tri_compiler}-${tri_arch}"
+
+d=${PWD}
+sd=${d}/sources
+bd=${d}/../extern/${tri_triplet}
+id=${d}/../extern/${tri_triplet}/include
+extern_path=${d}/../extern/${tri_triplet}
+install_path=${d}/../install/${tri_triplet}
+
+echo ""
+echo "----------------------------------------------------------------------"
+echo "Base directory:            \${d}:               ${d}"
+echo "Build source directory:    \${sd}:              ${sd}"
+echo "Extern base directory:     \${bd}:              ${bd}"
+echo "Extern include directory:  \${id}:              ${id}"
+echo "Install directory:         \${install_path}:    ${install_path}"
+echo "Extern directory:          \${extern_path}:     ${extern_path}"
+echo "----------------------------------------------------------------------"
+
+# Some extra helper functions.
+# ------------------------------------------------------------------------
+# Cross-platform symlink function. With one parameter, it will check
+# whether the parameter is a symlink. With two parameters, it will create
+# a symlink to a file or directory, with syntax: link $linkname $target
+#
+# NOTE: You first pass the name of the link (which doesn't need to exist)
+#       The second parameter is the DIR/FILE to which you want to link 
+#       ln -s ./dir ./linkname   ----> link ./linkname ./dir
+#      
+#       Example:
+#          
+#           of=of_v0.8.4_vs_release
+#           ofappdir=${d}/../${of}/apps/PROJECTNAME/
+#           cd ${ofappdir}
+#           link APPLICATION ./../../../src/of/
+#
+# Source: http://stackoverflow.com/questions/18641864/git-bash-shell-fails-to-create-symbolic-links
+# ------------------------------------------------------------------------
+
+link() {
+
+    if [[ -z "$2" ]]; then
+
+        # Link-checking mode.
+        if [ "${is_win}" = "y" ] ; then
+            echo "-----------------------------------------------------------"
+            fsutil reparsepoint query "$1" > /dev/null
+        else
+            [[ -h "$1" ]]
+        fi
+    else
+
+        # Link-creation mode.
+        if [ "${is_win}" = "y" ] ;  then
+            # Windows needs to be told if it's a directory or not. Infer that.
+            # Also: note that we convert `/` to `\`. In this case it's necessary.
+            echo "---------------------------------------------------------- ++++++++++-"
+            if [[ -d "$2" ]]; then
+#                runas /user:administrator "mklink args"
+               # cmd <<< "runas /user:administrator \"mklink /J \"$1\" \"${2//\//\\}\" \"" > /dev/null
+                echo "mklink /J \"${1//\//\\}\" \"${2//\//\\}\""
+#                cmd <<< "runas /user:administrator \"mklink /J \"${1//\//\\}\" \"${2//\//\\}\" \""
+#                cmd <<< "mklink /J \"$1\" \"${2//\//\\}\" " > /dev/null
+                cmd <<< "mklink /J \"${1//\//\\}\" \"${2//\//\\}\" " > /dev/null
+                echo "??"
+            else
+                cmd <<< "mklink \"$1\" \"${2//\//\\}\"" > /dev/null
+            fi
+        else
+            # You know what? I think ln's parameters are backwards.
+            ln -s "$2" "$1"
+        fi
+    fi
+}
+
+
+
