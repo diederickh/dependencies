@@ -37,10 +37,6 @@ fi
 # You can define these dependencies
 # -----------------------------------------------------------------------# 
 #
-# Export one of the following architectures in your dependencies.sh 
-#  - architecture="i386"
-#  - architecture="x86_64"
-#
 # build_m4=n
 # build_autoconf=n        # needs an updated m4 
 # build_libtool=n
