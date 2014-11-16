@@ -1629,6 +1629,7 @@ if [ "${build_liblo}" = "y" ] ; then
 fi
 
 # Compile remoxly 
+
 if [ "${build_remoxly}" = "y" ] ; then
     if [ ! -f ${bd}/lib/libremoxly.a ] ; then
         cd ${sd}/remoxly/projects/gui/build
@@ -1647,7 +1648,7 @@ if [ "${build_remoxly}" = "y" ] ; then
             -DEXTERN_INC_DIR=${bd}/include \
             -DEXTERN_SRC_DIR=${bd}/src \
             -DTINYLIB_DIR=${d}/sources/tinylib \
-            -DCMAKE_OSX_ARCHITECTURES=${architecture} \
+            ${cmake_osx_architectures} \
             -DCMAKE_BUILD_TYPE=Release ..
 
         cmake --build . --target install --config Release
