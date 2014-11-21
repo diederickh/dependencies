@@ -30,16 +30,16 @@ How to use
 
 1. Create a `build` directory 
 2. Checkout this dependencies repository in `build/dependencies/`
-2. Create a file called `build/dependencies.sh`
-3. In `build/dependencies.sh` list the libraries you want to compile (see below).
-4. Create a shell script in `build/release.sh` with something like:
+3. Create a file called `build/dependencies.sh`
+4. In `build/dependencies.sh` list the libraries you want to compile (see below).
+5. Create a shell script in `build/release.sh` with something like:
 
    ````sh
      vs="2013"
      source ./dependencies/build.sh
    ````
 
-5. Execute the script from a Git Bash or console.
+6. Execute the script from a Git Bash or console.
 
 
 build/dependencies.sh
