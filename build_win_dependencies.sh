@@ -12,14 +12,9 @@ set -x
 #        https://github.com/roxlu/dependencies
 #
 #  ********************************************************************** *
-# This script can compile several libraries on Windows. We try to keep 
-# everything as simple as possible in here, no functions, macros etc..  
 #
-# You need to install a couple of dependencies before we can use this 
-# build script. 
-# 
-#   - NASM:                            install into ${PWD}/tools/nasm
-#   - ActiveState perl for windows:    install into ${PWD}/tools/perl
+# This script can compile several libraries on Windows. We try to keep 
+# everything as simple as possible in here, try to limit functions etc..
 # 
 # ----------------------------------------------------------------------- #
 #               B U I L D    S E T T I N G S 
@@ -30,8 +25,12 @@ if [ ! -f ./dependencies.sh ] ; then
     exit
 fi
 
-
 source ./dependencies.sh
+
+if [ "${tri_compiler}" = "" ] ; then
+    echo "\$tri_compiler not set, did you create a shell script and included environment?"
+    exit
+fi
 
 # You can define these dependencies
 # -----------------------------------------------------------------------# 
@@ -62,10 +61,7 @@ source ./dependencies.sh
 
 d=${PWD}
 sd=${d}/sources
-perl_path=${d}/tools/perl/bin/
-nasm_path=${d}/tools/nasm/
-cygw_path=${d}/tools/cygwin/
-msys_path=${d}/tools/msys/
+nasm_path=${sd}/tools/nasm/
 prog_path="c:\\Program Files (x86)"
 vs_path="${prog_path}\\Microsoft Visual Studio 12.0"
 sd_win=$(echo "${sd}" | sed 's/^\///' | sed 's/\//\\/g' | sed 's/^./\0:/')
@@ -76,27 +72,6 @@ git_bash="${prog_path}\\Git\\bin\\sh.exe"
 cd ~
 homedir=${PWD}
 cd ${d}
-
-if [ "${build_x264}" = "y" ] || [ "${build_openssl}" == "y" ] ; then 
-
-    # Make sure we have perl installed.
-    if [ ! -d ${perl_path} ] ; then
-        echo "Please install ActiveState Perl in ${sd}/tools/perl"
-        exit
-    fi
-
-    # Make sure we have nasm.
-    if [ ! -d ${nasm_path} ] ; then
-        echo "Please install nasm in ${sd}/tools/nasm"
-        exit
-    fi
-    
-    # Make sure we have cygwin
-    if [ ! -d ${cygw_path} ] ; then
-        echo "Please install cygwin into ${sd}/tools/cygwin"
-        exit
-    fi
-fi 
 
 export PATH=${cygw_path}/bin/:${perl_path}:${nasm_path}:${PATH}:${bd}/bin/:${sd}/gyp/
 
@@ -155,7 +130,6 @@ function compile() {
     fi
 }
 
-
 # ----------------------------------------------------------------------- #
 #                D O W N L O A D   D E P E N D E N C I E S 
 # ----------------------------------------------------------------------- #
@@ -177,6 +151,23 @@ fi
 
 if [ ! -d ${bd}/include ] ; then 
     mkdir -p ${bd}/include
+fi
+
+if [ ! -d ${sd}/tools/nasm ] ; then
+    mkdir -p ${sd}/tools/nasm
+fi
+
+# Download nasm
+if [ ! -f ${sd}/tools/nasm/nasm.exe ] ; then
+
+    cd ${sd}/tools/nasm/
+    if [ ! -f nasm.zip ] ; then
+        curl -o nasm.zip http://www.nasm.us/pub/nasm/releasebuilds/2.11.06/win32/nasm-2.11.06-win32.zip
+    fi
+
+    unzip nasm.zip
+    cp nasm-2.11.06/* .
+    rm -rf nasm-2.11.06 
 fi
 
 # Download the cmakefiles
@@ -455,40 +446,64 @@ fi
 if [ "${build_lame}" = "y" ] ; then
     if [ ! -f ${bd}/lib/libmp3lame.lib ] ; then 
         cd ${sd}/lame
-        if [ -d ${sd}/lame/build ] ; then
-            rm -r build
-            mkdir build
+
+        if [ ! -f ${sd}/lame/CMakeLists.txt ] ; then
+            if [ ! -f ${sd}/cmakefiles/lame/CMakeLists.txt ] ; then
+                echo "Cannot find ${sd}/cmakefiles/lame/CMakeLists.txt. Please checkout the cmake repository first."
+                exit
+            fi
+            cp ${sd}/cmakefiles/lame/CMakeLists.txt ${sd}/lame/
+        fi
+        
+        if [ ! -d ${sd}/lame/build ] ; then
+            rm -r ${sd}/lame/build
+            mkdir ${sd}/lame/build
         fi
 
-        cd $build
+        cd ${sd}/lame/build
+
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -DCMAKE_BUILD_TYPE=Release \
             -G "${cmake_generator}" \
             ../
+
         cmake --build . --config Release --target install
+
+        echo "ok"
     fi
 fi
 
-# Compile portaudiox
+# Compile portaudio
 if [ "${build_portaudio}" = "y" ] ; then
     if [ ! -f ${bd}/lib/portaudio_static_x86.lib ] ; then 
+
         cd ${sd}/portaudio
+
         if [ -d ${sd}/portaudio/build ] ; then
             rm -r ${sd}/portaudio/build
-            mkdir ${sd}/portaudio/build
         fi
 
+        if [ ! -d ${sd}/portaudio/build ] ; then
+            mkdir ${sd}/portaudio/build
+        fi
+        
         cd ${sd}/portaudio/build
+
+        # We need to set this because on win8 we get an error that ksguid.lib can't be found.
+        export CFLAGS="${CFLAGS} -DPA_WDMKS_NO_KSGUID_LIB"
+
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
-            -DPA_DLL_LINK_WITH_STATIC_RUNTIME=True \
+            -DPA_DLL_LINK_WITH_STATIC_RUNTIME=On \
             -G "${cmake_generator}" \
             ../
+
         cmake --build . --config Release
         
         cp Release/portaudio_static_x86.lib ${bd}/lib/
         cp ${sd}/portaudio/include/portaudio.h ${bd}/include/
    fi
 fi
+
 
 # Compile video capture
 if [ "${build_videocapture}" = "y" ] ; then
@@ -502,6 +517,7 @@ if [ "${build_videocapture}" = "y" ] ; then
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -DCMAKE_BUILD_TYPE=Release \
             -DUSE_OPENGL=False \
+            -DUSE_GENERATE_X86=True \
             -G "${cmake_generator}" \
             .. 
         cmake --build . --target install --config Release
@@ -569,13 +585,13 @@ if [ "${build_glfw}" = "y" ] ; then
         ldcopy=${LDFLAGS}
         export CFLAGS=""
         export LDFLAGS=""
-#            -G "Visual Studio 11 2012" \
+
         cd build
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -G "${cmake_generator}" \
             ..
         cmake --build . --target install
-       echo ${cmake_generator}
+
         export CFLAGS=${cfcopy}
         export LDFLAGS=${ldcopy}
     fi
@@ -589,14 +605,17 @@ if [ "${build_libz}" = "y" ] ; then
         if [ -d build.release ] ; then
             rm -r build.release
         fi
+
         mkdir build.release 
         cd build.release
+
         cmake -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=${bd} \
             -DAMD64=NO \
             -DASM686=NO \
             -G "${cmake_generator}" \
             ../
+
         cmake --build . --target install --config Release
     fi
 fi
@@ -604,12 +623,15 @@ fi
 # Compile libpng
 if [ "${build_libpng}" = "y" ] ; then
     if [ ! -f ${bd}/lib/libpng16_static.lib ] ; then
+
         cd ${sd}/libpng 
         if [ -d build.release ] ; then
             rm -r build.release
         fi
+
         mkdir build.release 
         cd build.release
+
         cmake -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=${bd} \
             -DPNG_STATIC=YES \
@@ -618,6 +640,7 @@ if [ "${build_libpng}" = "y" ] ; then
             -DPNG_DEBUG=NO \
             -G "${cmake_generator}" \
             ../
+
         cmake --build . --target install --config release
     fi        
 fi
@@ -625,6 +648,7 @@ fi
 # Compile remoxly
 if [ "${build_remoxly}" = "y" ] ; then
     if [ ! -f ${bd}/lib/remoxly.lib ] ; then
+
         cd ${sd}/remoxly/projects/gui/build
 
         if [ ! -d build.release ] ; then
@@ -642,14 +666,15 @@ if [ "${build_remoxly}" = "y" ] ; then
             -DCMAKE_BUILD_TYPE=Release \
             -G "${cmake_generator}" \
             ..
+
         cmake --build . --target install --config Release
     fi
 fi
 
 if [ "${build_freetype}" ] ; then 
     if [ ! -f ${bd}/lib/freetype.lib ] ; then
-        cd ${sd}/freetype2 
 
+        cd ${sd}/freetype2 
         if [ ! -d build.release ] ; then 
             mkdir build.release
         fi
@@ -661,6 +686,7 @@ if [ "${build_freetype}" ] ; then
             -DBUILD_SHARED_LIBS=Off \
             -G "${cmake_generator}" \
             ../
+
         cmake --build . --target install --config Release
     fi
 fi 
@@ -668,6 +694,7 @@ fi
 # Compile libcurl 
 if [ "${build_curl}" = "y" ] ; then 
     if [ ! -f ${bd}/lib/libcurl.lib ] ; then
+
         cd ${sd}/curl
         if [ ! -d build.release ] ; then 
             mkdir build.release
@@ -681,6 +708,7 @@ if [ "${build_curl}" = "y" ] ; then
             -DCURL_DISABLE_LDAP=On \
             -G "${cmake_generator}" \
             ../
+
         cmake --build . --target install --config Release
     fi
 fi
