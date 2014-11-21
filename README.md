@@ -33,10 +33,12 @@ How to use
 2. Create a file called `build/dependencies.sh`
 3. In `build/dependencies.sh` list the libraries you want to compile (see below).
 4. Create a shell script in `build/release.sh` with something like:
+
    ````sh
      vs="2013"
      source ./dependencies/build.sh
    ````
+
 5. Execute the script from a Git Bash or console.
 
 
