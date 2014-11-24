@@ -1652,8 +1652,11 @@ if [ "${build_remoxly}" = "y" ] ; then
 fi
 
 if [ "${build_h264bitstream}" = "y" ] ; then
-    cd ${sd}/h264bitstream
-    ./configure --prefix=${bd} --enable-static=yes --enable-shared=no
-    make
-    make install
+
+    if [ ! -f ${bd}/bin/h264_analyze ] ; then
+        cd ${sd}/h264bitstream
+        ./configure --prefix=${bd} --enable-static=yes --enable-shared=no
+        make
+        make install
+    fi
 fi 

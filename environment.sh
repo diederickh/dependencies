@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # The user can set the following variables before including this file:
 #
@@ -166,6 +166,3 @@ link() {
         fi
     fi
 }
-
-
-
