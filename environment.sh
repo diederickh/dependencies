@@ -93,13 +93,13 @@ if [ "${is_mac}" = "y" ] ; then
 fi
 
 tri_triplet="${tri_platform}-${tri_compiler}-${tri_arch}"
-
-d=${PWD}
-sd=${d}/sources
-bd=${d}/../extern/${tri_triplet}
-id=${d}/../extern/${tri_triplet}/include
-extern_path=${d}/../extern/${tri_triplet}
-install_path=${d}/../install/${tri_triplet}
+d=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+sd=${d}/../sources
+bd=${d}/../../extern/${tri_triplet}
+id=${d}/../../extern/${tri_triplet}/include
+extern_path=${d}/../../extern/${tri_triplet}
+install_path=${d}/../../install/${tri_triplet}
+sources_path=${d}/../sources
 
 echo ""
 echo "----------------------------------------------------------------------"
@@ -109,6 +109,7 @@ echo "Extern base directory:     \${bd}:              ${bd}"
 echo "Extern include directory:  \${id}:              ${id}"
 echo "Install directory:         \${install_path}:    ${install_path}"
 echo "Extern directory:          \${extern_path}:     ${extern_path}"
+echo "Sources path:              \${sources_path}:    ${sources_path}"
 echo "----------------------------------------------------------------------"
 
 # Some extra helper functions.
@@ -166,3 +167,4 @@ link() {
         fi
     fi
 }
+
