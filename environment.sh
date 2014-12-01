@@ -13,8 +13,9 @@ if [ "${1}" = "" ] ; then
     echo ""
     echo "Usage: ${0} [32,64]"
     echo ""
-    echo "Example: compile 32bit version: ./${0} 32"
-    echo "Example: compile 64bit version: ./${0} 64"
+    echo "Example: compile 32bit version: ${0} 32"
+    echo "Example: compile 64bit version: ${0} 64"
+    echo ""
     exit
 fi
 

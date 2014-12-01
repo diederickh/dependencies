@@ -1576,8 +1576,10 @@ if [ "${build_videocapture}" = "y" ] ; then
         if [ -d ${sd}/video_capture/build/build.release ] ; then
             rm -r build.release
         fi
+
         mkdir build.release
         cd build.release
+
         cmake \
             -DCMAKE_INSTALL_PREFIX=${bd} \
             -DCMAKE_BUILD_TYPE=Release \
@@ -1586,7 +1588,9 @@ if [ "${build_videocapture}" = "y" ] ; then
             -DEXTERN_SRC_DIR=${bd}/src \
             -DTINYLIB_DIR=${d}/sources/tinylib \
             -DUSE_DECKLINK=No \
+            -DUSE_GENERATE_X86=Yes \
             ..
+
         cmake --build . --target install --config Release
     fi
 fi
