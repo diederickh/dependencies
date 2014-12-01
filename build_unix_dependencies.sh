@@ -91,6 +91,9 @@ fi
 # build_liblo=n           # needs autotools/make, OSC implementation.
 # build_remoxly=y         # needs tinylib
 # build_h264bitstream=y   # h264 bitstream parser
+# build_cubeb=y           # audio output, see https://github.com/kinetiknz/cubeb
+# build_sndfile=n         # sndfile, http://www.mega-nerd.com/libsndfile/
+# build_gorilla=n         # gorilla audio
 
 # -----------------------------------------------------------------------# 
 
@@ -748,16 +751,50 @@ fi
 
 # Download h264 bitstream parser
 if [ "${build_h264bitstream}" = "y" ] ; then
-     if [ ! -d ${sd}/h264bitstream ] ; then 
-         cd ${sd}/
-         curl -L -o h264bitstream.tar.gz http://sourceforge.net/projects/h264bitstream/files/latest/download
-         tar -zxvf h264bitstream.tar.gz
-         mv h264bitstream-0.1.9 h264bitstream
-     fi
+    if [ ! -d ${sd}/h264bitstream ] ; then 
+        cd ${sd}/
+        curl -L -o h264bitstream.tar.gz http://sourceforge.net/projects/h264bitstream/files/latest/download
+        tar -zxvf h264bitstream.tar.gz
+        mv h264bitstream-0.1.9 h264bitstream
+    fi
 fi
 
+# Download cubeb
+if [ "${build_cubeb}" = "y" ] ; then
+    if [ ! -d ${sd}/cubeb ] ; then
+        cd ${sd}
+        #git clone --depth 1 --branch master https://github.com/kinetiknz/cubeb.git 
+        git clone https://github.com/kinetiknz/cubeb.git 
+        cd cubeb
+        git checkout 4bc13035b143ac299a58b8467b87212fc1f5958c
+    fi
+fi
+
+# Download sndfile
+if [ "${build_sndfile}" = "y" ] ; then 
+    if [ ! -d ${sd}/sndfile ] ; then
+        cd ${sd}
+        curl -L -o sndfile.tar.gz http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.25.tar.gz
+        tar -zxvf sndfile.tar.gz
+        mv libsndfile-1.0.25 sndfile
+    fi
+fi
+
+# Download gorilla audio
+if [ "${build_gorilla}" = "y" ] ; then 
+    if [ ! -d ${sd}/gorilla ] ; then 
+        cd ${sd}
+        mkdir gorilla
+        cd gorilla
+        hg clone https://code.google.com/p/gorilla-audio/ .
+    fi
+fi
 
 # Cleanup some files we don't need anymore.
+if [ -f ${sd}/sndfile.tar.gz ] ; then
+    rm ${sd}/sndfile.tar.gz
+fi
+
 if [ -f ${sd}/autoconf.tar.gz ] ; then
     rm ${sd}/autoconf.tar.gz
 fi
@@ -1625,15 +1662,16 @@ if [ "${build_liblo}" = "y" ] ; then
 fi
 
 # Compile remoxly 
-
 if [ "${build_remoxly}" = "y" ] ; then
     if [ ! -f ${bd}/lib/libremoxly.a ] ; then
+
         cd ${sd}/remoxly/projects/gui/build
 
         if [ -d build.release ] ; then
             rm -r build.release
             echo "remove!"
         fi
+
         mkdir build.release
         cd build.release 
         export CFLAGS=""
@@ -1651,6 +1689,7 @@ if [ "${build_remoxly}" = "y" ] ; then
     fi
 fi
 
+# Compile h264 bitstream 
 if [ "${build_h264bitstream}" = "y" ] ; then
 
     if [ ! -f ${bd}/bin/h264_analyze ] ; then
@@ -1660,3 +1699,53 @@ if [ "${build_h264bitstream}" = "y" ] ; then
         make install
     fi
 fi 
+
+# Compile cubeb
+if [ "${build_cubeb}" = "y" ] ; then
+
+    if [ ! -f ${bd}/lib/libcubeb.a ] ; then
+        cd ${sd}/cubeb
+        if [ ! -f ./configure ] ; then
+            autoreconf --install
+        fi
+        ./configure --prefix=${bd} --enable-static --enable-shared=no
+        make 
+        make check
+        make install
+    fi
+fi
+
+# Compile sndfile
+if [ "${build_sndfile}" = "y" ] ; then 
+
+    if [ ! -f ${bd}/lib/libsndfile.a ] ; then
+        cd ${sd}/sndfile
+        ./configure --prefix=${bd} --enable-static --enable-shared=no -framework Carbon
+        make 
+        make install
+    fi
+fi
+
+# Compile gorilla
+# if [ "${build_gorilla}" = "y" ] ; then
+# 
+#     cd ${sd}/gorilla
+# 
+#     if [ -d build.release ] ; then
+#         rm -r build.release
+#         echo "remove!"
+#     fi
+# 
+#     mkdir build.release
+#     cd build.release 
+# 
+#     export CFLAGS=""
+#     export LDFLAGS=""
+# 
+#     cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+#         ${cmake_osx_architectures} \
+#         -DCMAKE_BUILD_TYPE=Release \
+#         ../build/
+#     cmake --build .
+#     cmake --build . --target install --config Release
+# fi
