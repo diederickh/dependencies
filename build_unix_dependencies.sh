@@ -1685,7 +1685,7 @@ if [ "${build_remoxly}" = "y" ] ; then
             -DEXTERN_LIB_DIR=${bd}/lib \
             -DEXTERN_INC_DIR=${bd}/include \
             -DEXTERN_SRC_DIR=${bd}/src \
-            -DTINYLIB_DIR=${d}/sources/tinylib \
+            -DTINYLIB_DIR=${d}/../sources/tinylib \
             ${cmake_osx_architectures} \
             -DCMAKE_BUILD_TYPE=Release ..
 
