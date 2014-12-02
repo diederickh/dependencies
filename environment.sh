@@ -7,17 +7,30 @@
 #    vs="2010"  - For "Visual Studio 10 2010"
 #    vs="2012"  - For "Visual Studio 11 2012"
 #    vs="2013"  - For "Visual Studio 12 2013"
+#
+# 
+# You can add the option `debug` if you want to have the `is_debug` set to y.
+#
 
 # Make sure the user passes the correct architecture.
 if [ "${1}" = "" ] ; then
     echo ""
-    echo "Usage: ${0} [32,64]"
+    echo "Usage: ${0} [32,64,] [debug] "
     echo ""
-    echo "Example: compile 32bit version: ${0} 32"
-    echo "Example: compile 64bit version: ${0} 64"
+    echo "Example: compile 32bit version: ${0} 32 "
+    echo "Example: compile 64bit version: ${0} 64 debug"
     echo ""
     exit
 fi
+
+is_debug=n
+
+for var in "$@" 
+do
+    if [ "${var}" = "debug" ] ; then
+        is_debug=y
+    fi
+done
 
 # Detect if we're running on windows, mac, linux.
 is_mac=n
@@ -32,6 +45,9 @@ extra_cflags=""
 extra_ldflags=""
 cmake_osx_architectures=""
 cmake_generator="" # is used with the win version
+cmake_build_type="" # "Release" or "Debug", used for -DCMAKE_BUILD_TYPE 
+cmake_build_config="" # "Release" or "Debug", used for `cmake --build . --config ${cmake_build_config}`
+debug_flag="" # Set to _debug when building a debug version. You can add _debug to your debug build targets.
 
 if [ "${in_arch}" = "32" ] ; then
     tri_arch="i386"
@@ -91,6 +107,15 @@ if [ "${is_mac}" = "y" ] ; then
     else
         cmake_osx_architectures="-DCMAKE_OSX_ARCHITECTURES=i386"
     fi
+fi
+
+if [ "${is_debug}" = "y" ] ; then
+    cmake_build_type="Debug"
+    cmake_build_config="Debug"
+    debug_flag="_debug"
+else
+    cmake_build_type="Release"
+    cmake_build_config="Release"
 fi
 
 tri_triplet="${tri_platform}-${tri_compiler}-${tri_arch}"
