@@ -100,4 +100,8 @@ build_nanovg=n
 build_liblo=n           # needs autotools/make, OSC implementation.
 build_remoxly=y         # needs tinylib
 build_h264bitstream=y   # h264 bitstream parser
+build_cubeb=y           # audio output, see https://github.com/kinetiknz/cubeb
+build_sndfile=n         # sndfile, http://www.mega-nerd.com/libsndfile/
+build_gorilla=n         # gorilla audio
+build_dxt5=n            # a dxt5 image compressor. 
 ````

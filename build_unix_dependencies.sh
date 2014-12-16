@@ -94,6 +94,7 @@ fi
 # build_cubeb=y           # audio output, see https://github.com/kinetiknz/cubeb
 # build_sndfile=n         # sndfile, http://www.mega-nerd.com/libsndfile/
 # build_gorilla=n         # gorilla audio
+# build_dxt5=n            # a dxt5 image compressor. 
 
 # -----------------------------------------------------------------------# 
 
@@ -790,6 +791,17 @@ if [ "${build_gorilla}" = "y" ] ; then
     fi
 fi
 
+
+# Download DXT5 compressor
+if [ "${build_dxt5}" = "y" ] ; then
+    if [ ! -d ${sd}/dxt5 ] ; then
+        cd ${sd}
+        mkdir dxt5
+        cd dxt5
+        git clone https://github.com/Cyan4973/RygsDXTc .
+    fi
+fi
+
 # Cleanup some files we don't need anymore.
 if [ -f ${sd}/sndfile.tar.gz ] ; then
     rm ${sd}/sndfile.tar.gz
@@ -1052,9 +1064,9 @@ if [ "${build_glad}" = "y" ] ; then
         fi
         cd ${sd}/glad
         if [ -f /usr/bin/python2 ] ; then
-            python2 main.py --generator=c --out-path=gl --extensions GL_ARB_timer_query,GL_APPLE_rgb_422
+            python2 main.py --generator=c --out-path=gl --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
         else
-            python main.py --generator=c --out-path=gl --extensions GL_ARB_timer_query,GL_APPLE_rgb_422
+            python main.py --generator=c --out-path=gl --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
         fi
         cp -r ${sd}/glad/gl/include/glad ${bd}/include/
         cp -r ${sd}/glad/gl/include/KHR ${bd}/include/
@@ -1727,6 +1739,14 @@ if [ "${build_sndfile}" = "y" ] ; then
         ./configure --prefix=${bd} --enable-static --enable-shared=no -framework Carbon
         make 
         make install
+    fi
+fi
+
+# Install DXT5 compressor
+if [ "${build_dxt5}" = "y" ] ; then
+    if [ ! -f ${bd}/src/stb_dxt.cpp ] ; then
+        cp ${sd}/dxt5/stb_dxt.cpp ${bd}/src/
+        cp ${sd}/dxt5/stb_dxt.h ${bd}/include
     fi
 fi
 
