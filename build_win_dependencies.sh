@@ -54,6 +54,7 @@ fi
 # build_remoxly=y           # needs tinylib
 # build_freetype=y
 # build_curl=y              # we build a static lib, make sure to add a define `CURL_STATICLIB` in the project which uses the library on windows!  
+# build_dxt5=n              # a dxt5 image compressor. 
 
 # ----------------------------------------------------------------------- #
 #                E N V I R O N M E N T  V A R I A B L E S 
@@ -361,6 +362,16 @@ if [ "${build_curl}" = "y" ] ; then
     fi
 fi
 
+# Download DXT5 compressor
+if [ "${build_dxt5}" = "y" ] ; then
+    if [ ! -d ${sd}/dxt5 ] ; then
+        cd ${sd}
+        mkdir dxt5
+        cd dxt5
+        git clone https://github.com/Cyan4973/RygsDXTc .
+    fi
+fi
+
 # ----------------------------------------------------------------------- #
 #                C O M P I L E   D E P E N D E N C I E S 
 # ----------------------------------------------------------------------- #
@@ -561,7 +572,7 @@ if [ "${build_glad}" = "y" ] ; then
             mkdir ${bd}/src 
         fi
         cd ${sd}/glad
-        python main.py --generator=c --out-path=gl --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422
+        python main.py --generator=c --out-path=gl --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
         #python main.py --generator=c --out-path=gl 
 
         cp -r ${sd}/glad/gl/include/glad ${bd}/include/
@@ -710,5 +721,13 @@ if [ "${build_curl}" = "y" ] ; then
             ../
 
         cmake --build . --target install --config Release
+    fi
+fi
+
+# Install DXT5 compressor
+if [ "${build_dxt5}" = "y" ] ; then
+    if [ ! -f ${bd}/src/stb_dxt.cpp ] ; then
+        cp ${sd}/dxt5/stb_dxt.cpp ${bd}/src/
+        cp ${sd}/dxt5/stb_dxt.h ${bd}/include
     fi
 fi
