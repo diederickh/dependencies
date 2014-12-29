@@ -373,46 +373,70 @@ fi
 
 # Download ImageMagick
 if [ "${build_imagemagick}" = "y" ] ; then
-    if [ ! -d ${sd}/imagemagick ] ; then
-        cd ${sd}
-        curl -o imagemagick.tar.gz ftp://ftp.imagemagick.org/pub/ImageMagick/binaries/ImageMagick-x86_64-apple-darwin13.2.0.tar.gz
-        tar -zxvf imagemagick.tar.gz
-        mv ImageMagick-6.8.9 imagemagick
-    fi
 
-    # Fix ImageMagick dylibs + install
-    if [ ! -f ${id}/imagemagick/convert ] ; then
-        if [ ! -d ${id} ] ; then 
-            mkdir ${id}
-        fi
-        if [ ! -d ${id}/lib ] ; then 
-            mkdir ${id}/lib
-        fi
-        if [ ! -d ${id}/imagemagick ] ; then 
-            mkdir ${id}/imagemagick
+    # This is a somewhat experimental part; we tested both the binary release and source; last time the source build worked better. 
+    if [ 0 -eq 1 ] ; then 
+        if [ ! -d ${sd}/imagemagick ] ; then
+            cd ${sd}
+            curl -o imagemagick.tar.gz ftp://ftp.imagemagick.org/pub/ImageMagick/binaries/ImageMagick-x86_64-apple-darwin14.0.0.tar.gz
+            tar -zxvf imagemagick.tar.gz
+            mv ImageMagick-6.9.0 imagemagick
         fi
 
-        # fix dylib paths for imagemagick apps
-        cd ${sd}/imagemagick/lib
-        for dylib in `ls -1 *.dylib`; do
-            for app in ${sd}/imagemagick/bin/* ; do 
-                install_name_tool -change "/ImageMagick-6.8.9/lib/${dylib}" "@executable_path/../lib/${dylib}" ${app}
-                cp ${app} ${id}/imagemagick/
+        # Fix ImageMagick dylibs + install
+        if [ ! -f ${id}/imagemagick/convert ] ; then
+            if [ ! -d ${id} ] ; then 
+                mkdir ${id}
+            fi
+            if [ ! -d ${id}/lib ] ; then 
+                mkdir ${id}/lib
+            fi
+            if [ ! -d ${id}/imagemagick ] ; then 
+                mkdir ${id}/imagemagick
+            fi
+
+            # fix dylib paths for imagemagick apps
+            cd ${sd}/imagemagick/lib
+            for dylib in `ls -1 *.dylib`; do
+                for app in ${sd}/imagemagick/bin/* ; do 
+                    install_name_tool -change "/ImageMagick-6.9.0/lib/${dylib}" "@executable_path/../lib/${dylib}" ${app}
+                    cp ${app} ${id}/imagemagick/
+                done
             done
-        done
+            
+            # fix dylib paths for the dylibs themself + copy them
+            cd ${sd}/imagemagick/lib
+            for dylib_a in `ls -1 *.dylib`; do
+                for dylib_b in `ls -1 *.dylib`; do
+                    if [ "${dylib_a}" == "${dylib_b}" ] ; then
+                        echo "${dylib_a} == ${dylib_b}"
+                    else
+                        install_name_tool -change /ImageMagick-6.8.9/lib/${dylib_b} "@executable_path/../lib/${dylib_b}" ${dylib_a}
+                    fi
+                done
+                cp ${sd}/imagemagick/lib/${dylib_a} ${id}/lib
+            done
+        fi
+    else
+        if [ ! -d ${sd}/im ] ; then
+            # We need to cleanup the image magick build.
+            cd ${sd}
+            if [ ! -f im.tar.gz ] ; then
+                curl -o im.tar.gz http://www.imagemagick.org/download/ImageMagick.tar.gz
+                tar -zxvf im.tar.gz
+            fi
+
+            if [ -d ImageMagick-6.9.0-1 ] ; then
+                mv ImageMagick-6.9.0-1 im
+            fi
+            
+            cd im
+            ./configure --prefix=${bd} \
+                        --enable-static=yes
+            make
+            make install
+        fi
         
-        # fix dylib paths for the dylibs themself + copy them
-        cd ${sd}/imagemagick/lib
-        for dylib_a in `ls -1 *.dylib`; do
-            for dylib_b in `ls -1 *.dylib`; do
-                if [ "${dylib_a}" == "${dylib_b}" ] ; then
-                    echo "${dylib_a} == ${dylib_b}"
-                else
-                    install_name_tool -change /ImageMagick-6.8.9/lib/${dylib_b} "@executable_path/../lib/${dylib_b}" ${dylib_a}
-                fi
-            done
-            cp ${sd}/imagemagick/lib/${dylib_a} ${id}/lib
-        done
     fi
 fi
 
@@ -1104,13 +1128,13 @@ if [ "${build_glfw}" = "y" ] ; then
         export CFLAGS=""
         export LDFLAGS=""
 
-
         cd build
         cmake \
             -DCMAKE_INSTALL_PREFIX=${bd} \
             -DGLFW_BUILD_TESTS=No \
             -DGLFW_BUILD_EXAMPLES=No \
             -DGLFW_BUILD_DOCS=No \
+            -DGLFW_USE_RETINA=No \
             ${cmake_osx_architectures} \
             ..
         cmake --build . --target install
@@ -1408,7 +1432,7 @@ if [ "${build_curl}" = "y" ] ; then
         cd ${sd}/curl
         ./configure --prefix=${bd} \
             --enable-static=yes \
-            --enable-shared=0 \
+            --enable-shared=no \
             --disable-ldaps \
             --disable-rtsp \
             --disable-dict \
@@ -1798,3 +1822,4 @@ fi
 #     cmake --build .
 #     cmake --build . --target install --config Release
 # fi
+
