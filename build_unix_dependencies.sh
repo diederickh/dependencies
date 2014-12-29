@@ -95,6 +95,7 @@ fi
 # build_sndfile=n         # sndfile, http://www.mega-nerd.com/libsndfile/
 # build_gorilla=n         # gorilla audio
 # build_dxt5=n            # a dxt5 image compressor. 
+# build_irssi=n           # irssi irc client :) 
 
 # -----------------------------------------------------------------------# 
 
@@ -791,7 +792,6 @@ if [ "${build_gorilla}" = "y" ] ; then
     fi
 fi
 
-
 # Download DXT5 compressor
 if [ "${build_dxt5}" = "y" ] ; then
     if [ ! -d ${sd}/dxt5 ] ; then
@@ -802,11 +802,26 @@ if [ "${build_dxt5}" = "y" ] ; then
     fi
 fi
 
+# Download irssi IRC client
+if [ "${build_irssi}" = "y" ] ; then
+    if [ ! -d ${sd}/irssi ] ; then
+        cd ${sd}
+        curl -L -o irssi.tar.gz http://irssi.org/files/irssi-0.8.17.tar.gz
+        tar -zxvf irssi.tar.gz
+        mv irssi-0.8.17 irssi
+    fi
+fi
+
 # Cleanup some files we don't need anymore.
 if [ -f ${sd}/sndfile.tar.gz ] ; then
     rm ${sd}/sndfile.tar.gz
 fi
-
+if [ -f ${sd}/h264bitstream.tar.gz ] ; then
+    rm ${sd}/h264bitstream.tar.gz
+fi
+if [ -f ${sd}/irssi.tar.gz ] ; then
+    rm ${sd}/irssi.tar.gz
+fi
 if [ -f ${sd}/autoconf.tar.gz ] ; then
     rm ${sd}/autoconf.tar.gz
 fi
@@ -897,7 +912,6 @@ fi
 if [ -f ${sd}/m4.tar.gz ] ; then
     rm ${sd}/m4.tar.gz
 fi
-
 
 # ----------------------------------------------------------------------- #
 #                C O M P I L E   D E P E N D E N C I E S 
@@ -1749,6 +1763,17 @@ if [ "${build_dxt5}" = "y" ] ; then
         cp ${sd}/dxt5/stb_dxt.h ${bd}/include
     fi
 fi
+
+# Compile irrsi, needs glib which we need to test (no time atm)
+#if [ "${build_irssi}" = "y" ] ; then
+#    cd ${sd}/irssi
+#    ./configure --prefix=${bd} \
+#        --enable-static=yes \
+#        --enable-shared=no \
+#        --disable-glibtest
+#    
+#    
+#fi
 
 # Compile gorilla
 # if [ "${build_gorilla}" = "y" ] ; then
