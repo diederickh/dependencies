@@ -95,7 +95,8 @@ fi
 # build_sndfile=n         # sndfile, http://www.mega-nerd.com/libsndfile/
 # build_gorilla=n         # gorilla audio
 # build_dxt5=n            # a dxt5 image compressor. 
-# build_irssi=n           # irssi irc client :) 
+# build_irssi=n           # irssi irc client :)
+# build_openssl=n         # build the openssl library
 
 # -----------------------------------------------------------------------# 
 
@@ -169,6 +170,20 @@ function compile() {
         make
         make install
     fi
+}
+
+function set_path() {
+    export PATH=${bd}/bin/:${sd}/gyp/:${pathorig}
+    export CFLAGS="-I${bd}/include ${extra_cflags}"
+    export CXXFLAGS=${CFLAGS}
+    export LDFLAGS="-L${bd}/lib ${extra_ldflags}"
+}
+
+function reset_path() {
+    export PATH=${pathorig}
+    export CFLAGS=${cflagsorig}
+    export CXXFLAGS=${cflagsorig}
+    export LDFLAGS=${ldflagsorig}
 }
 
 # ----------------------------------------------------------------------- #
@@ -836,7 +851,21 @@ if [ "${build_irssi}" = "y" ] ; then
     fi
 fi
 
+# Download the openSSL library
+if [ "${build_openssl}" == "y" ] ; then
+    if [ ! -d openssl ] ; then
+        curl -L -o openssl.tar.gz https://www.openssl.org/source/openssl-1.0.1j.tar.gz
+        #curl -L -o openssl.tar.gz https://www.openssl.org/source/openssl-1.0.0o.tar.gz
+        tar -zxvf openssl.tar.gz
+        mv openssl-1.0.1j openssl
+        #mv openssl-1.0.0o openssl
+    fi
+fi
+
 # Cleanup some files we don't need anymore.
+if [ -f ${sd}/openssl.tar.gz ] ; then
+    rm ${sd}/openssl.tar.gz
+fi
 if [ -f ${sd}/sndfile.tar.gz ] ; then
     rm ${sd}/sndfile.tar.gz
 fi
@@ -1785,6 +1814,18 @@ if [ "${build_dxt5}" = "y" ] ; then
     if [ ! -f ${bd}/src/stb_dxt.cpp ] ; then
         cp ${sd}/dxt5/stb_dxt.cpp ${bd}/src/
         cp ${sd}/dxt5/stb_dxt.h ${bd}/include
+    fi
+fi
+
+if [ "${build_openssl}" == "y" ] ; then
+    if [ ! -f ${bd}/lib/libssl.a ] ; then
+        cd ${sd}/openssl
+        reset_path
+        ./config --prefix=${bd}
+        make clean
+        make
+        make install
+        set_path
     fi
 fi
 
