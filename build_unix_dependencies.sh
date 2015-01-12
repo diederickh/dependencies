@@ -79,7 +79,7 @@ fi
 # build_tracker=n         # openGL/openCV based video tracking
 # build_opencv=n
 # build_curl=n
-# build_jannson=n
+# build_jansson=n
 # build_x264=y            # needs yasm 
 # build_flvmeta=n         
 # build_videogenerator=y
@@ -97,6 +97,7 @@ fi
 # build_dxt5=n            # a dxt5 image compressor. 
 # build_irssi=n           # irssi irc client :)
 # build_openssl=n         # build the openssl library
+# build_httpparser=n      # joyent http parser
 
 # -----------------------------------------------------------------------# 
 
@@ -277,8 +278,6 @@ if [ "${build_libz}" = "y" ] ; then
         mv zlib-1.2.8 zlib
     fi
 fi
-
-
 
 # Download mongoose (signaling)
 if [ "${build_mongoose}" = "y" ] ; then
@@ -642,7 +641,6 @@ if [ "${build_pango}" = "y" ] ; then
     fi
 fi
 
-
 # Download glib
 if [ "${build_glib}" = "y" ] ; then
     if [ ! -d ${sd}/glib ] ; then
@@ -852,13 +850,23 @@ if [ "${build_irssi}" = "y" ] ; then
 fi
 
 # Download the openSSL library
-if [ "${build_openssl}" == "y" ] ; then
-    if [ ! -d openssl ] ; then
+if [ "${build_openssl}" = "y" ] ; then
+    if [ ! -d ${sd}/openssl ] ; then
+        cd ${sd}
         curl -L -o openssl.tar.gz https://www.openssl.org/source/openssl-1.0.1j.tar.gz
         #curl -L -o openssl.tar.gz https://www.openssl.org/source/openssl-1.0.0o.tar.gz
         tar -zxvf openssl.tar.gz
         mv openssl-1.0.1j openssl
         #mv openssl-1.0.0o openssl
+    fi
+fi
+
+# Download http_parser from joyent
+if [ "${build_httpparser}" = "y" ] ; then
+    if [ ! -d ${sd}/http_parser ] ; then
+        mkdir ${sd}/http_parser
+        cd ${sd}/http_parser
+        git clone https://github.com/joyent/http-parser.git .
     fi
 fi
 
@@ -1817,15 +1825,33 @@ if [ "${build_dxt5}" = "y" ] ; then
     fi
 fi
 
+# Compile openSSL
 if [ "${build_openssl}" == "y" ] ; then
     if [ ! -f ${bd}/lib/libssl.a ] ; then
         cd ${sd}/openssl
         reset_path
-        ./config --prefix=${bd}
+        if [ "${tri_arch}" = "i386" ] ; then
+            ./config --prefix=${bd} 
+        else
+            ./Configure --prefix=${bd}/ darwin64-x86_64-cc
+        fi
         make clean
-        make
         make install
         set_path
+    fi
+fi
+
+# Install http parser
+if [ "${build_httpparser}" = "y" ] ; then
+    cd ${sd}/http_parser
+
+    if [ ! -d ${bd}/src ] ; then
+        mkdir ${bd}/src
+    fi
+
+    if [ ! -f ${bd}/src/http_parser.c ] ; then
+        cp ${sd}/http_parser/http_parser.c ${bd}/src/
+        cp ${sd}/http_parser/http_parser.h ${bd}/include
     fi
 fi
 
