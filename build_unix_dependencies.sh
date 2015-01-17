@@ -40,7 +40,7 @@ fi
 # build_m4=n
 # build_autoconf=n        # needs an updated m4 
 # build_libtool=n
-# build_automake=n      
+# build_automake=n        # needs autoconf      
 # build_pkgconfig=n
 # build_gtkdoc=n         
 # build_pixman=n
@@ -52,7 +52,7 @@ fi
 # build_libjpg=n
 # build_colm=n
 # build_ragel=n           # needs colm
-# build_harfbuzz=n        # needs ragel
+# build_harfbuzz=n        # needs ragel, automake, pkgconfig, libtool, autoconf
 # build_freetype=n        # needs automake, autoconf, libtool
 # build_glib=n            # needs ffi 
 # build_cairo=n           # needs png, freetype, harfbuzz 
@@ -98,6 +98,7 @@ fi
 # build_irssi=n           # irssi irc client :)
 # build_openssl=n         # build the openssl library
 # build_httpparser=n      # joyent http parser
+
 
 # -----------------------------------------------------------------------# 
 
@@ -674,16 +675,24 @@ if [ "${build_colm}" = "y" ] ; then
 
     if [ ! -d ${sd}/colm ] ; then 
         cd ${sd}
-        git clone --depth 1 --branch master https://github.com/ehdtee/colm.git 
+        curl -L -o colm.tar.gz http://www.colm.net/files/colm/colm-0.12.0.tar.gz
+        tar -zxvf colm.tar.gz
+        mv colm-0.12.0 colm
     fi
-
 fi
 
 # Download ragel (needed by harfbuzz)
 if [ "${build_ragel}" = "y" ] ; then
     if [ ! -d ${sd}/ragel ] ; then
+        
         cd ${sd}
-        git clone --depth 1 --branch master https://github.com/ehdtee/ragel.git 
+
+        curl -L -o ragel.tar.gz http://www.colm.net/files/ragel/ragel-6.9.tar.gz
+        tar -zxvf ragel.tar.gz
+        
+        if [ ! -d ${sd}/ragel ] ; then
+            mv ragel-6.9 ragel
+        fi
     fi
 fi
 
@@ -692,10 +701,10 @@ if [ "${build_harfbuzz}" = "y" ] ; then
     
     if [ ! -d ${sd}/harfbuzz ] ; then
         cd ${sd}
-        curl -o hb.tar.bz2 http://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.35.tar.bz2
+        curl -o hb.tar.bz2 http://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.37.tar.bz2
         bunzip2 hb.tar.bz2
         tar -xvf hb.tar
-        mv harfbuzz-0.9.35 harfbuzz
+        mv harfbuzz-0.9.37 harfbuzz
 
         # git fails on indic with colm 0.13
         # git clone https://github.com/behdad/harfbuzz.git
@@ -873,6 +882,9 @@ fi
 # Cleanup some files we don't need anymore.
 if [ -f ${sd}/openssl.tar.gz ] ; then
     rm ${sd}/openssl.tar.gz
+fi
+if [ -f ${sd}/ragel.tar.gz ] ; then
+    rm ${sd}/ragel.tar.gz
 fi
 if [ -f ${sd}/sndfile.tar.gz ] ; then
     rm ${sd}/sndfile.tar.gz
@@ -1153,6 +1165,7 @@ fi
 if [ "${build_glfw}" = "y" ] ; then
     if [ ! -f ${bd}/lib/libglfw3.a ] ; then
         cd ${sd}/glfw
+        
         if [ -d build ] ; then 
             rm -r build
         fi
@@ -1438,24 +1451,33 @@ fi
 
 # Compile harfbuzz 
 if [ "${build_harfbuzz}" = "y" ] ; then 
-    if [ ! -f ${bd}/lib/libharfbuzz.a ] ; then 
+    if [ -f ${bd}/lib/libharfbuzz.a ] ; then
+        
         cd ${sd}/harfbuzz
+        
         if  [ ! -f ./configure ] ; then
             ./autogen.sh
         fi
 
-        export FREETYPE_CFLAGS="-I${bd}/include/freetype2/"
+        if [ "${build_freetype}" = "y" ] ; then
+            hb_freetype="--with-freetype"
+        fi
+        
+        export FREETYPE_CFLAGS="-I${bd}/include/ -I${bd}/include/freetype2 -L${bd}/lib/" 
         export FREETYPE_LIBS="-lfreetype"
 
         if [ "${is_mac}" = "y" ] ; then 
             ./configure --prefix=${bd} \
-                --with-coretext=yes \
-                --enable-static=yes \
-                --enable-shared=no
+                        --with-coretext=yes \
+                        --enable-static=yes \
+                        --enable-shared=no \
+                        ${hb_freetype} 
+
         elif [ "${is_linux}" = "y" ] ; then
             ./configure --prefix=${bd} \
-                --enable-static=yes \
-                --enable-shared=no
+                        --enable-static=yes \
+                        --enable-shared=no \
+                        ${hb_freetype} \
         fi
 
         make
@@ -1828,6 +1850,7 @@ fi
 # Compile openSSL
 if [ "${build_openssl}" == "y" ] ; then
     if [ ! -f ${bd}/lib/libssl.a ] ; then
+
         cd ${sd}/openssl
         reset_path
         if [ "${tri_arch}" = "i386" ] ; then
