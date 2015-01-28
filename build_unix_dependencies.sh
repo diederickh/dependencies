@@ -1451,8 +1451,9 @@ fi
 
 # Compile harfbuzz 
 if [ "${build_harfbuzz}" = "y" ] ; then 
-    if [ -f ${bd}/lib/libharfbuzz.a ] ; then
-        
+
+    if [ ! -f ${bd}/lib/libharfbuzz.a ] ; then
+
         cd ${sd}/harfbuzz
         
         if  [ ! -f ./configure ] ; then
@@ -1462,7 +1463,8 @@ if [ "${build_harfbuzz}" = "y" ] ; then
         if [ "${build_freetype}" = "y" ] ; then
             hb_freetype="--with-freetype"
         fi
-        
+
+
         export FREETYPE_CFLAGS="-I${bd}/include/ -I${bd}/include/freetype2 -L${bd}/lib/" 
         export FREETYPE_LIBS="-lfreetype"
 
@@ -1477,12 +1479,12 @@ if [ "${build_harfbuzz}" = "y" ] ; then
             ./configure --prefix=${bd} \
                         --enable-static=yes \
                         --enable-shared=no \
-                        ${hb_freetype} \
+                        ${hb_freetype} 
         fi
 
-        make
-        make install
-    fi
+            make
+            make install
+        fi
 fi
 
 # Compile libcurl 
@@ -1846,6 +1848,7 @@ if [ "${build_dxt5}" = "y" ] ; then
         cp ${sd}/dxt5/stb_dxt.h ${bd}/include
     fi
 fi
+
 
 # Compile openSSL
 if [ "${build_openssl}" == "y" ] ; then
