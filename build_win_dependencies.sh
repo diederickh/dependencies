@@ -392,7 +392,8 @@ if [ "${build_libuv}" = "y" ] ; then
 fi
 
 # Compile openssl 
-if [ "${build_openssl}" = "y" ] ; then
+# NOTE: disable openssl ... doesn't compile at the moment. (2015.01.28)
+if [ "${build_openssl}" = "yyy" ] ; then
     if [ ! -f ${bd}/bin/libeay32.dll ] ; then 
         cd ${sd}/openssl
 
