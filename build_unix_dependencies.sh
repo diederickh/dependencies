@@ -106,7 +106,7 @@ fi
 #                E N V I R O N M E N T  V A R I A B L E S 
 # ----------------------------------------------------------------------- #
 
-set -x
+#set -x
 
 cflagsorig=${CFLAGS}
 ldflagsorig=${LDFLAGS}
