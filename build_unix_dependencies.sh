@@ -106,7 +106,7 @@ fi
 #                E N V I R O N M E N T  V A R I A B L E S 
 # ----------------------------------------------------------------------- #
 
-#set -x
+set -x
 
 cflagsorig=${CFLAGS}
 ldflagsorig=${LDFLAGS}
@@ -1273,7 +1273,9 @@ fi
 if [ "${build_rxpplayer}" = "y" ] ; then 
     if [ ! -f ${bd}/lib/rxp_player.a ] ; then
         cd ${sd}/rxp_player/build
-        mkdir build.release
+        if [ ! -d build.release ] ; then
+            mkdir build.release
+        fi
         cd build.release
         cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release ..
         cmake --build . --target install
@@ -1514,10 +1516,17 @@ fi
 if [ "${build_jansson}" = "y" ] ; then 
     if [ ! -f ${bd}/lib/libjansson.a ] ; then 
         cd ${sd}/jansson
-        mkdir build.release
+        if [ ! -d build.release ] ; then
+            mkdir build.release
+        fi
+
+        reset_path()
+
         cd build.release 
         cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release ../
         cmake --build . --target install
+
+        set_path()
     fi
 fi
 

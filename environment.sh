@@ -61,15 +61,6 @@ else
     exit
 fi
 
-# Set CFLAGS / LDFLAGS
-if [ "${architecture}" = "x86_64" ] || [ "${architecture}" = "" ] ; then
-    extra_cflags=" -m64 -arch x86_64"
-    extra_ldflags=" -arch x86_64 "
-else
-    extra_cflags=" -m32 -arch i386 "
-    extra_ldflags=" -arch i386 "
-fi
-
 # Set platform and compiler
 if [ "$(uname)" = "Darwin" ]; then
     is_mac=y
@@ -101,6 +92,30 @@ elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
     fi
     tri_platform="win"
 fi
+
+# Set CFLAGS / LDFLAGS
+if [ "${architecture}" = "x86_64" ] || [ "${architecture}" = "" ] ; then
+    if [ "${is_mac}" = "y" ] ; then
+        #extra_cflags=" -m64 -arch x86_64"
+        #extra_ldflags=" -arch x86_64 "
+        extra_cflags=" -arch x86_64 "
+        extra_ldflags=" -arch x86_64 "
+    else
+        extra_cflags=" -m64 "
+        extra_ldflags=" -m64 "
+    fi
+else
+    if [ "${is_mac}" = "y" ] ; then
+        #extra_cflags=" -m32 -arch i386 "
+        #extra_ldflags=" -arch i386 "
+        extra_cflags=" -arch i386 "
+        extra_ldflags=" -arch i386 "
+    else
+        extra_cflags=" -m32  "
+        extra_ldflags=" -m32 "
+    fi
+fi
+
 
 if [ "${is_mac}" = "y" ] ; then
     if [ "${in_arch}" = "64" ] ; then
