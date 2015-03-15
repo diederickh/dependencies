@@ -758,7 +758,8 @@ fi
 
 # Download portaudio
 if [ "${build_portaudio}" = "y" ] ; then
-    download portaudio pa_stable http://www.portaudio.com/archives/pa_stable_v19_20140130.tgz
+#    download portaudio pa_stable http://www.portaudio.com/archives/pa_stable_v19_20140130.tgz
+    download portaudio pa_stable http://www.portaudio.com/archives/pa_snapshot.tgz
 fi
 
 # Download libyuv
@@ -1520,13 +1521,13 @@ if [ "${build_jansson}" = "y" ] ; then
             mkdir build.release
         fi
 
-        reset_path()
+        reset_path
 
         cd build.release 
         cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release ../
         cmake --build . --target install
 
-        set_path()
+        set_path
     fi
 fi
 
