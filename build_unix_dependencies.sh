@@ -211,7 +211,7 @@ fi
 if [ ! -d ${sd}/cmake ] ; then
     mkdir ${sd}/cmake
     cd ${sd}/cmake
-    git clone --depth 1 --branch master git@bitbucket.org:roxlu/cmake.git .
+    git clone --depth 1 --branch master https://roxlu@bitbucket.org/roxlu/cmake.git
 fi
 
 # Download m4
