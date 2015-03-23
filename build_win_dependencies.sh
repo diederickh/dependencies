@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 
 # ----------------------------------------------------------------------- #
 #                                I N F O 
@@ -129,6 +129,14 @@ function compile() {
         make
         make install
     fi
+}
+
+function notify_error {
+    echo ""
+    echo ""
+    echo $1
+    echo ""
+    echo ""
 }
 
 # ----------------------------------------------------------------------- #
@@ -599,16 +607,22 @@ if [ "${build_glfw}" = "y" ] ; then
         export LDFLAGS=""
 
         cd build
+        
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -G "${cmake_generator}" \
             ..
+
+        if [ $? != 0 ] ; then
+            notify_error "Failed to setup GLFW."
+            exit
+        fi
+        
         cmake --build . --target install
 
         export CFLAGS=${cfcopy}
         export LDFLAGS=${ldcopy}
     fi
 fi
-
 
 # Compile libz
 if [ "${build_libz}" = "y" ] ; then
