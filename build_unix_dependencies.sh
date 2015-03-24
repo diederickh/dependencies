@@ -98,7 +98,7 @@ fi
 # build_irssi=n           # irssi irc client :)
 # build_openssl=n         # build the openssl library
 # build_httpparser=n      # joyent http parser
-
+# build_screencapture=n   # the screen capturer.
 
 # -----------------------------------------------------------------------# 
 
@@ -383,6 +383,15 @@ if [ "${build_videocapture}" = "y" ] ; then
         mkdir ${sd}//video_capture
         cd ${sd}/video_capture
         git clone http://github.com/roxlu/video_capture.git .
+    fi
+fi
+
+# Download screen capture library
+if [ "${build_screencapture}" = "y" ] ; then
+    if [ ! -d ${sd}/screen_capture ] ; then
+        mkdir ${sd}/screen_capture
+        cd ${sd}/screen_capture
+        git clone http://github.com/roxlu/screen_capture.git .
     fi
 fi
 

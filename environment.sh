@@ -48,7 +48,8 @@ cmake_generator="" # is used with the win version
 cmake_build_type="" # "Release" or "Debug", used for -DCMAKE_BUILD_TYPE 
 cmake_build_config="" # "Release" or "Debug", used for `cmake --build . --config ${cmake_build_config}`
 debug_flag="" # Set to _debug when building a debug version. You can add _debug to your debug build targets.
-debugger="" # Set to the debugger, e.g. gdb or lldb 
+debugger="" # Set to the debugger, e.g. gdb or lldb
+build_dir="" # Set to the build dir, e.g. build.release or build.debug
 
 if [ "${in_arch}" = "32" ] ; then
     tri_arch="i386"
@@ -129,6 +130,7 @@ if [ "${is_debug}" = "y" ] ; then
     cmake_build_type="Debug"
     cmake_build_config="Debug"
     debug_flag="_debug"
+    build_dir="build.debug"
 
     if [ "${is_mac}" = "y" ] ; then
         debugger="lldb"
@@ -138,6 +140,7 @@ if [ "${is_debug}" = "y" ] ; then
 else
     cmake_build_type="Release"
     cmake_build_config="Release"
+    build_dir="build.release"
 fi
 
 tri_triplet="${tri_platform}-${tri_compiler}-${tri_arch}"
@@ -158,6 +161,7 @@ echo "Extern include directory:  \${id}:              ${id}"
 echo "Install directory:         \${install_path}:    ${install_path}"
 echo "Extern directory:          \${extern_path}:     ${extern_path}"
 echo "Sources path:              \${sources_path}:    ${sources_path}"
+echo "Build dir:                 \${build_dir}:       ${build_dir}"
 echo "----------------------------------------------------------------------"
 
 # Some extra helper functions.
