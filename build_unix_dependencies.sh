@@ -1526,17 +1526,22 @@ fi
 if [ "${build_jansson}" = "y" ] ; then 
     if [ ! -f ${bd}/lib/libjansson.a ] ; then 
         cd ${sd}/jansson
+
         if [ ! -d build.release ] ; then
             mkdir build.release
         fi
 
-        reset_path
-
+        if [ "${is_mac}" = "y" ] ; then
+            reset_path
+        fi
+        
         cd build.release 
         cmake -DCMAKE_INSTALL_PREFIX=${bd} -DCMAKE_BUILD_TYPE=Release ../
         cmake --build . --target install
 
-        set_path
+        if [ "${is_mac}" = "y" ] ; then
+            set_path
+        fi
     fi
 fi
 
@@ -1874,15 +1879,27 @@ if [ "${build_openssl}" == "y" ] ; then
     if [ ! -f ${bd}/lib/libssl.a ] ; then
 
         cd ${sd}/openssl
-        reset_path
+
         if [ "${tri_arch}" = "i386" ] ; then
+            reset_path
             ./config --prefix=${bd} 
+            make clean
+            make install
+            set_path
         else
-            ./Configure --prefix=${bd}/ darwin64-x86_64-cc
+            if [ "${is_mac}" = "y" ] ; then 
+                reset_path
+                ./Configure --prefix=${bd}/ darwin64-x86_64-cc
+                make clean
+                make install
+                set_path
+            else
+                ./config --prefix=${bd}
+                maek clean
+                make install
+            fi
         fi
-        make clean
-        make install
-        set_path
+
     fi
 fi
 
