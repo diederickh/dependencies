@@ -99,6 +99,7 @@ fi
 # build_openssl=n         # build the openssl library
 # build_httpparser=n      # joyent http parser
 # build_screencapture=n   # the screen capturer.
+# build_crypt=y           # openwall crypt library
 
 # -----------------------------------------------------------------------# 
 
@@ -886,6 +887,16 @@ if [ "${build_httpparser}" = "y" ] ; then
         mkdir ${sd}/http_parser
         cd ${sd}/http_parser
         git clone https://github.com/joyent/http-parser.git .
+    fi
+fi
+
+# Download the openwall crypt library
+if [ "${build_crypt}" = "y" ] ; then
+    if [ ! -d ${sd}/crypt_blowfish ] ; then
+        cd ${sd}
+        curl -L -o crypt.tar.gz http://www.openwall.com/crypt/crypt_blowfish-1.3.tar.gz
+        tar -zxvf crypt.tar.gz
+        mv crypt_blowfish-1.3 crypt_blowfish
     fi
 fi
 
@@ -1915,6 +1926,12 @@ if [ "${build_httpparser}" = "y" ] ; then
         cp ${sd}/http_parser/http_parser.c ${bd}/src/
         cp ${sd}/http_parser/http_parser.h ${bd}/include
     fi
+fi
+
+if [ "${build_crypt}" = "y" ] ; then
+
+    cd ${sd}/crypt_blowfish
+    make
 fi
 
 # Compile irrsi, needs glib which we need to test (no time atm)
