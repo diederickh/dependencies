@@ -421,6 +421,11 @@ if [ "${build_libjpg}" = "y" ] ; then
         curl -o jpeg.tar.gz http://www.ijg.org/files/jpegsrc.v9a.tar.gz
         tar -zxvf jpeg.tar.gz
         mv jpeg-9a libjpeg
+
+        # Copy the cmake file.
+        if [ ! -f ${sd}/jpeg/CMakeLists.txt ] ; then
+            cp ${sd}/cmakefiles/jpeg/CMakeLists.txt ${sd}/libjpeg/
+        fi
     fi 
 fi
 
@@ -433,7 +438,11 @@ if [ "${build_harfbuzz}" = "y" ] ; then
         bunzip2 hb.tar.bz2
         tar -xvf hb.tar
         mv harfbuzz-0.9.37 harfbuzz
-
+        
+        # Copy the cmake file.
+        if [ ! -f ${sd}/harfbuzz/CMakeLists.txt ] ; then
+            cp ${sd}/cmakefiles/harfbuzz/CMakeLists.txt ${sd}/harfbuzz/
+        fi
     fi
 fi
 
