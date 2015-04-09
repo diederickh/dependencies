@@ -1487,7 +1487,6 @@ if [ "${build_harfbuzz}" = "y" ] ; then
             hb_freetype="--with-freetype"
         fi
 
-
         export FREETYPE_CFLAGS="-I${bd}/include/ -I${bd}/include/freetype2 -L${bd}/lib/" 
         export FREETYPE_LIBS="-lfreetype"
 

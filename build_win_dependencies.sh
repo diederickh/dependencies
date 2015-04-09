@@ -64,6 +64,7 @@ d=${PWD}
 sd=${d}/sources
 nasm_path=${sd}/tools/nasm/
 prog_path="c:\\Program Files (x86)"
+perl_path="c:\\Perl64\bin"
 vs_path="${prog_path}\\Microsoft Visual Studio 12.0"
 sd_win=$(echo "${sd}" | sed 's/^\///' | sed 's/\//\\/g' | sed 's/^./\0:/')
 bd_win=$(echo "${bd}" | sed 's/^\///' | sed 's/\//\\/g' | sed 's/^./\0:/')
@@ -74,7 +75,9 @@ cd ~
 homedir=${PWD}
 cd ${d}
 
-export PATH=${cygw_path}/bin/:${perl_path}:${nasm_path}:${PATH}:${bd}/bin/:${sd}/gyp/
+path_orig=${PATH}
+
+#export PATH=${cygw_path}/bin/:${perl_path}:${nasm_path}:${PATH}:${bd}/bin/:${sd}/gyp/
 
 # ----------------------------------------------------------------------- #
 #                          F U N C T I O N S  
@@ -380,6 +383,70 @@ if [ "${build_dxt5}" = "y" ] ; then
     fi
 fi
 
+# Download http_parser from joyent
+if [ "${build_httpparser}" = "y" ] ; then
+    if [ ! -d ${sd}/http_parser ] ; then
+        mkdir ${sd}/http_parser
+        cd ${sd}/http_parser
+        git clone https://github.com/joyent/http-parser.git .
+    fi
+fi
+
+# Download screen capture library
+if [ "${build_screencapture}" = "y" ] ; then
+    if [ ! -d ${sd}/screen_capture ] ; then
+        mkdir ${sd}/screen_capture
+        cd ${sd}/screen_capture
+        git clone http://github.com/roxlu/screen_capture.git .
+    fi
+fi
+
+# Download mongoose (signaling)
+if [ "${build_mongoose}" = "y" ] ; then
+    if [ ! -d ${sd}/mongoose ] ; then 
+        cd ${sd}
+        git clone https://github.com/cesanta/mongoose.git mongoose
+    fi    
+    
+    if [ ! -f ${bd}/src/mongoose.c ] ; then
+        cp ${sd}/mongoose/mongoose.c ${bd}/src/
+        cp ${sd}/mongoose/mongoose.h ${bd}/include/
+    fi
+fi
+
+# Download libjpg
+if [ "${build_libjpg}" = "y" ] ; then
+    if [ ! -d ${sd}/libjpeg ] ; then 
+        cd ${sd}
+        curl -o jpeg.tar.gz http://www.ijg.org/files/jpegsrc.v9a.tar.gz
+        tar -zxvf jpeg.tar.gz
+        mv jpeg-9a libjpeg
+    fi 
+fi
+
+# Download harfbuzz 
+if [ "${build_harfbuzz}" = "y" ] ; then 
+    
+    if [ ! -d ${sd}/harfbuzz ] ; then
+        cd ${sd}
+        curl -o hb.tar.bz2 http://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.37.tar.bz2
+        bunzip2 hb.tar.bz2
+        tar -xvf hb.tar
+        mv harfbuzz-0.9.37 harfbuzz
+
+    fi
+fi
+
+# Download jansson 
+if [ "${build_jansson}" = "y" ] ; then
+    if [ ! -d ${sd}/jansson ] ; then
+        cd ${sd}
+        curl -o jans.tar.gz http://www.digip.org/jansson/releases/jansson-2.6.tar.gz
+        tar -zxvf jans.tar.gz
+        mv jansson-2.6 jansson
+    fi
+fi
+
 # ----------------------------------------------------------------------- #
 #                C O M P I L E   D E P E N D E N C I E S 
 # ----------------------------------------------------------------------- #
@@ -400,16 +467,17 @@ if [ "${build_libuv}" = "y" ] ; then
 fi
 
 # Compile openssl 
-# NOTE: disable openssl ... doesn't compile at the moment. (2015.01.28)
-if [ "${build_openssl}" = "yyy" ] ; then
-    if [ ! -f ${bd}/bin/libeay32.dll ] ; then 
+# You can compile openssl by manually opening a Visual Studio Command Prompt
+# and executing the generated tmp.bat file. Also make sure that you installed
+# ActiveState Perl in c:\Perl64 and it's in your path.
+
+if [ "${build_openssl}" = "y" ] ; then
+    if [ ! -f ${bd}/bin/libeay32.dll ] ; then
         cd ${sd}/openssl
 
         if [ -f tmp.bat ] ; then
             rm tmp.bat
         fi    
-
-        #perl Configure VC-WIN32 --prefix=${bd}
 
         echo "@echo off" >> tmp.bat
         echo "cd ${vs_path}\\VC\\bin\\x86_amd64\\" >> tmp.bat
@@ -420,12 +488,27 @@ if [ "${build_openssl}" = "yyy" ] ; then
         echo "call ms\\do_win64a.bat" >> tmp.bat
         echo "nmake -f ${sd_win}\\openssl\\ms\\ntdll.mak" >> tmp.bat
         echo "nmake -f ${sd_win}\\openssl\\ms\\ntdll.mak install" >> tmp.bat
-        cmd /k "${sd}/openssl/tmp.bat"
-        cp -r ${sd}/openssl/installed/include/openssl ${bd}/include/
-        cp -r ${sd}/openssl/installed/lib/*.lib ${bd}/lib/
-        cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/
-        cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/
-        cp -r ${sd}/openssl/installed/bin/*.* ${bd}/bin/
+        echo "cp -r ${sd}/openssl/installed/include/openssl ${bd}/include/" >> tmp.bat
+        echo "cp -r ${sd}/openssl/installed/lib/*.lib ${bd}/lib/" >> tmp.bat
+        echo "cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/" >> tmp.bat
+        echo "cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/" >> tmp.bat
+        echo "cp -r ${sd}/openssl/installed/bin/*.* ${bd}/bin/" >> tmp.bat
+
+        echo ""
+        echo ""
+        echo "------------------------------------------------------------------------------"
+        echo "  Open a Visual Studio Developers command prompt and go to "
+        echo "" 
+        echo "     ${sd}/openssl"
+        echo "" 
+        echo "  Then execute the tmp.bat file to compile and install openssl"
+        echo ""
+        echo "  Also make sure that you installed ActiveState Perl into c:\Perl64 as openssl "
+        echo "  needs perl to configure"
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        echo ""
+        exit
    fi
 fi
 
@@ -495,7 +578,7 @@ fi
 
 # Compile portaudio
 if [ "${build_portaudio}" = "y" ] ; then
-    if [ ! -f ${bd}/lib/portaudio_static_x86.lib ] ; then 
+    if [ ! -f ${bd}/lib/portaudio.lib ] ; then 
 
         cd ${sd}/portaudio
 
@@ -518,8 +601,13 @@ if [ "${build_portaudio}" = "y" ] ; then
             ../
 
         cmake --build . --config Release
+
+        if [ "${is_32bit}" = "y" ] ; then
+            cp Release/portaudio_static_x86.lib ${bd}/lib/portaudio.lib
+        else
+            cp Release/portaudio_static_x64.lib ${bd}/lib/portaudio.lib
+        fi
         
-        cp Release/portaudio_static_x86.lib ${bd}/lib/
         cp ${sd}/portaudio/include/portaudio.h ${bd}/include/
    fi
 fi
@@ -719,23 +807,77 @@ fi
 
 # Compile libcurl 
 if [ "${build_curl}" = "y" ] ; then 
-    if [ ! -f ${bd}/lib/libcurl.lib ] ; then
+    if [ ! -f ${bd}/lib/libcurl_a.lib ] ; then
 
         cd ${sd}/curl
         if [ ! -d build.release ] ; then 
             mkdir build.release
         fi
 
-        cd build.release 
+        if [ -f tmp.bat ] ; then
+            rm tmp.bat
+        fi
 
-        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCURL_STATICLIB=On \
-            -DCURL_DISABLE_LDAP=On \
-            -G "${cmake_generator}" \
-            ../
+        # Create the correct bit flag for the nmake command
+        bit="x86"
+        if [ "${is_64bit}" = "y" ] ; then
+            bit="x64"
+        fi
+        
+        echo "@echo off" >> tmp.bat
+        echo "cd winbuild" >> tmp.bat
+        echo "nmake /f Makefile.vc mode=static VC=12 WITH_DEVEL=${bd_win} WITH_SSL=static ENABLE_SSPI=yes ENABLE_IPV6=yes ENABLE_IDN=yes ENABLE_WINSSL=no DEBUG=no MACHINE=${bit}" >> tmp.bat
+        echo "cd ..\builds" >> tmp.bat
+        echo "FOR /F \" tokens=*\" %%i IN ('dir /b /ad-h /od') DO (SET a=%%i)  " >> tmp.bat
+        echo "cp -r ${sd}/curl/builds/%a%/include/curl ${bd}/include/" >> tmp.bat
+        echo "cp -r ${sd}/curl/builds/%a%/lib/*.lib ${bd}/lib/" >> tmp.bat
+        echo "cd .." >> tmp.bat
 
-        cmake --build . --target install --config Release
+        echo ""
+        echo ""
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        echo "  Open a Visual Studio Developers command prompt and go to "
+        echo "" 
+        echo "     ${sd}/curl"
+        echo "" 
+        echo "  Then execute the tmp.bat file to compile and install libcurl"
+        echo ""
+        echo ""
+        echo "  IMPORTANT: because we create a static lib, make sure that you add the CURL_STATICLIB define!!! "
+        echo ""
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        echo ""
+
+        exit
+        
+        # 2015.04.05 - doesn't seem to work nicely with openssl.
+        #cd build.release 
+        #
+        #cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+        #    -DCMAKE_BUILD_TYPE=Release \
+        #    -DCURL_STATICLIB=On \
+        #    -DCURL_DISABLE_LDAP=On \
+        #    -G "${cmake_generator}" \
+        #    ../
+        #exit
+        #cmake --build . --target install --config Release
+    fi
+fi
+
+# Install http parser
+if [ "${build_httpparser}" = "y" ] ; then
+
+    cd ${sd}/http_parser
+
+    if [ ! -d ${bd}/src ] ; then
+        mkdir ${bd}/src
+    fi
+    
+    if [ ! -f ${bd}/src/http_parser.c ] ; then
+        cp ${sd}/http_parser/http_parser.c ${bd}/src/
+        cp ${sd}/http_parser/http_parser.h ${bd}/include
     fi
 fi
 
@@ -746,3 +888,70 @@ if [ "${build_dxt5}" = "y" ] ; then
         cp ${sd}/dxt5/stb_dxt.h ${bd}/include
     fi
 fi
+
+# Compile libjpeg
+if [ "${build_libjpg}" = "y" ] ; then
+
+    if [ ! -f ${bd}/lib/jpeg.lib ] ; then
+        cd ${sd}/libjpeg
+        if [ ! -d build.release ] ; then 
+            mkdir build.release
+        fi
+
+        cd build.release 
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -G "${cmake_generator}" \
+              ../
+
+        cmake --build . --target install --config Release
+    fi
+fi
+
+# Compile harfbuzz
+if [ "${build_harfbuzz}" = "y" ] ; then
+
+    if [ ! -f ${bd}/lib/harfbuzz.lib ] ; then
+
+        cd ${sd}/harfbuzz
+        if [ ! -d build.release ] ; then 
+            mkdir build.release
+        fi
+
+        cd build.release 
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DFREETYPE_LIB_DIR=${bd}/lib \
+              -DFREETYPE_INC_DIR=${bd}/include \
+              -G "${cmake_generator}" \
+              ../
+
+        cmake --build . --target install --config Release
+    fi
+fi
+
+# Compile jansson
+if [ "${build_jansson}" = "y" ] ; then
+
+    if [ ! -f ${bd}/lib/jansson.lib ] ; then
+        
+        cd ${sd}/jansson
+        if [ ! -d build.release ] ; then 
+            mkdir build.release
+        fi
+
+        cd build.release 
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -G "${cmake_generator}" \
+              ../
+
+        cmake --build . --target install --config Release
+    fi
+fi
+
+
+

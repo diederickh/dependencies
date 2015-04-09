@@ -36,6 +36,8 @@ done
 is_mac=n
 is_linux=n
 is_win=n
+is_64bit=""
+is_32bit=""
 in_arch=${1}
 tri_arch=""
 tri_compiler=""
@@ -53,8 +55,12 @@ build_dir="" # Set to the build dir, e.g. build.release or build.debug
 
 if [ "${in_arch}" = "32" ] ; then
     tri_arch="i386"
+    is_32bit="y"
+    is_64bit="n"
 elif [ "${in_arch}" = "64" ] ; then
     tri_arch="x86_64"
+    is_32bit="n"
+    is_64bit="y"
 else
     echo ""
     echo "'${in_arch}' is an invalid architecture. Use 32 or 64."
@@ -90,6 +96,10 @@ elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
     else
         cmake_generator="Visual Studio 12 2013"
         tri_compiler="vs2012"
+    fi
+
+    if [ "${is_64bit}" = "y" ] ; then
+        cmake_generator="${cmake_generator} Win64"
     fi
     tri_platform="win"
 fi
