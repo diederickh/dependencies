@@ -626,17 +626,26 @@ fi
 if [ "${build_videocapture}" = "y" ] ; then
     if [ ! -f ${bd}/lib/videocapture.lib ] ; then
         cd ${sd}/video_capture/build
-        if [ -d ${sd}/video_capture/build/build.release ] ; then
-            rm -r build.release
+        echo ${bd}/lib/videocapture.lib
+
+        # 2015.04.09 Why remove it ? 
+        #if [ -d ${sd}/video_capture/build/build.release ] ; then
+        #    rm -r build.release
+        #fi
+        
+        if [ ! -f build.release ] ; then
+            mkdir build.release
         fi
-        mkdir build.release
+        
         cd build.release
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
             -DCMAKE_BUILD_TYPE=Release \
             -DUSE_OPENGL=False \
             -DUSE_GENERATE_X86=True \
+            -DTINYLIB_DIR=${sd}/tinylib \
             -G "${cmake_generator}" \
-            .. 
+            ..
+  
         cmake --build . --target install --config Release
     fi
 fi
@@ -674,11 +683,18 @@ fi
 # Copy the GLAD sources + generate the C extension
 if [ "${build_glad}" = "y" ] ; then 
     if [ ! -f ${bd}/src/glad.c ] ; then
+        
         if [ ! -d ${bd}/src ] ; then
             mkdir ${bd}/src 
         fi
+        
         cd ${sd}/glad
-        python main.py --generator=c --out-path=gl --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
+        
+        python main.py \
+               --generator=c \
+               --out-path=gl \
+               --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
+        
         #python main.py --generator=c --out-path=gl 
 
         cp -r ${sd}/glad/gl/include/glad ${bd}/include/
