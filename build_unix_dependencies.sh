@@ -1731,7 +1731,7 @@ if [ "${build_videocapture}" = "y" ] ; then
             -DEXTERN_LIB_DIR=${bd}/lib \
             -DEXTERN_INC_DIR=${bd}/include \
             -DEXTERN_SRC_DIR=${bd}/src \
-            -DTINYLIB_DIR=${d}/sources/tinylib \
+            -DTINYLIB_DIR=${d}/../sources/tinylib \
             -DUSE_DECKLINK=No \
             -DUSE_GENERATE_X86=Yes \
             ..
