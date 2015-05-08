@@ -1,5 +1,5 @@
-#!/bin/bash
-
+#!/bin/sh
+set -x
 # ----------------------------------------------------------------------- #
 #                                I N F O 
 # ----------------------------------------------------------------------- #
@@ -364,6 +364,7 @@ fi
 
 # Download GLAD for GL
 if [ "${build_glad}" = "y" ] ; then
+    echo "GET GLAD"
     if [ ! -d ${sd}/glad ] ; then 
         cd ${sd}
         git clone --depth 1 --branch master https://github.com/Dav1dde/glad.git glad
