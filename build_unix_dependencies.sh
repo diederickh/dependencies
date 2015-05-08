@@ -100,6 +100,8 @@ fi
 # build_httpparser=n      # joyent http parser
 # build_screencapture=n   # the screen capturer.
 # build_crypt=y           # openwall crypt library
+# build_sdl1=y            # libsdl 1.*
+# build_sdl2=y            # libsdl 2.*
 
 # -----------------------------------------------------------------------# 
 
@@ -292,6 +294,12 @@ if [ "${build_mongoose}" = "y" ] ; then
         cp ${sd}/mongoose/mongoose.c ${bd}/src/
         cp ${sd}/mongoose/mongoose.h ${bd}/include/
     fi
+
+    if [ ! -f ${bd}/src/ssl_wrapper.c ] ; then
+        cp ${sd}/mongoose/examples/websocket_ssl_proxy/ssl_wrapper.c ${bd}/src
+        cp ${sd}/mongoose/examples/websocket_ssl_proxy/ssl_wrapper.h ${bd}/include
+        cp ${sd}/mongoose/examples/websocket_ssl_proxy/net_skeleton.h ${bd}/include
+    fi
 fi
 
 # Download net_skeleton (signaling)
@@ -305,6 +313,7 @@ if [ "${build_netskeleton}" = "y" ] ; then
         cp ${sd}/net_skeleton/net_skeleton.c ${bd}/src/
         cp ${sd}/net_skeleton/net_skeleton.h ${bd}/include/
     fi
+
 fi
 
 # Download ssl_wrapper (signaling)
@@ -578,7 +587,7 @@ if [ "${build_pixman}" = "y" ] ; then
     fi 
 fi
 
-# Download cairo 
+# Download gettext 
 if [ "${build_gettext}" = "y" ] ; then 
     if [ ! -d ${sd}/gettext ] ; then
         cd ${sd}
@@ -900,6 +909,26 @@ if [ "${build_crypt}" = "y" ] ; then
     fi
 fi
 
+# Download libsdl 2
+if [ "${build_sdl2}" = "y" ] ; then
+    if [ ! -d ${sd}/sdl2 ] ; then
+        cd ${sd}
+        curl -L -o sdl2.tar.gz https://www.libsdl.org/release/SDL2-2.0.3.tar.gz
+        tar -zxvf sdl2.tar.gz
+        mv SDL2-2.0.3 sdl2
+    fi
+fi
+
+# Download libsdl 1
+if [ "${build_sdl1}" = "y" ] ; then
+    if [ ! -d ${sd}/sdl1 ] ; then
+        cd ${sd}
+        curl -L -o sdl1.tar.gz https://www.libsdl.org/release/SDL-1.2.15.tar.gz
+        tar -zxvf sdl1.tar.gz
+        mv SDL-1.2.15 sdl1
+    fi
+fi
+
 # Cleanup some files we don't need anymore.
 if [ -f ${sd}/openssl.tar.gz ] ; then
     rm ${sd}/openssl.tar.gz
@@ -1005,6 +1034,15 @@ if [ -f ${sd}/lame.tar.gz ] ; then
 fi
 if [ -f ${sd}/m4.tar.gz ] ; then
     rm ${sd}/m4.tar.gz
+fi
+if [ -f ${sd}/sdl1.tar.gz ] ; then
+    rm ${sd}/sdl1.tar.gz
+fi
+if [ -f ${sd}/sdl2.tar.gz ] ; then
+    rm ${sd}/sdl2.tar.gz
+fi
+if [ -f ${sd}/crypt.tar.gz ] ; then
+    rm ${sd}/crypt.tar.gz
 fi
 
 # ----------------------------------------------------------------------- #
@@ -1595,9 +1633,13 @@ if [ "${build_fontconfig}" = "y" ] ; then
     fi
 fi
 
-# Build cairo 
+# Build cairo
+# note: 2015.05.08, mac build failed .. changed it a bit
 if [ "${build_cairo}" = "y" ] ; then 
-    if [ ! -f ${bd}/lib/libcairo.a ] ; then 
+    if [ ! -f ${bd}/lib/libcairo.a ] ; then
+        
+        cd ${sd}/cairo
+
         export PKG_CONFIG=${bd}/bin/pkg-config
         export PKG_CONFIG_PATH=${bd}/lib/pkgconfig
         export pixman_CFLAGS=-I${bd}/include/pixman-1/
@@ -1611,17 +1653,14 @@ if [ "${build_cairo}" = "y" ] ; then
             export LIBS="-lfreetype -lfontconfig"
         fi
 
-        cd ${sd}/cairo
         if [ ! -f ./configure ] ; then
-            ./autogen.sh
+            ./autogen.sh  --prefix=${bd} \
+                          --disable-dependency-tracking \
+                          --disable-xlib \
+                          --enable-static=yes \
+                          --enable-shared=no
         fi
 
-        ./configure \
-            --prefix=${bd} \
-            --disable-dependency-tracking \
-            --disable-xlib \
-            --enable-static=yes \
-            --enable-shared=no
         make
         make install
     fi
@@ -1927,10 +1966,41 @@ if [ "${build_httpparser}" = "y" ] ; then
     fi
 fi
 
+# Testing with Crypt (@todo finish...)
 if [ "${build_crypt}" = "y" ] ; then
-
     cd ${sd}/crypt_blowfish
     make
+fi
+
+# Compile SDL 1 (doesn't compile on mac 10.10)
+if [ "${build_sdl1}" = "y" ] ; then
+    cd ${sd}/sdl1
+    ./configure --prefix=${bd} \
+                --enable-static=yes
+    make
+    make install
+fi
+
+
+# Compile SDL 2
+if [ "${build_sdl2}" = "y" ] ; then
+    if [ ! -f ${bd}/libSDL2.a ] ; then 
+        cd ${sd}/sdl2
+
+        if [ -d build.release ] ; then
+            rm -rf build.release
+        fi
+
+        mkdir build.release
+        cd build.release 
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              ${cmake_osx_architectures} \
+              -DCMAKE_BUILD_TYPE=Release \
+              ..
+        
+        cmake --build . --target install --config Release
+    fi
 fi
 
 # Compile irrsi, needs glib which we need to test (no time atm)
