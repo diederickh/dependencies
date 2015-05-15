@@ -1273,12 +1273,15 @@ fi
 if [ "${build_libav}" = "y" ] ; then 
     if [ ! -f ${bd}/lib/libavcodec.a ] ; then
         cd ${sd}/libav
-        ./configure --prefix=${bd} --enable-gpl 
+        ./configure --prefix=${bd} \
+                    --enable-gpl \
+                    --enable-libx264
         make
         make install
     fi
 fi
 
+exit
 # Move rapid xml sources 
 if [ "${build_rapidxml}" = "y" ] ; then
     if [ ! -f ${bd}/include/rapidxml_iterators.hpp ] ; then
