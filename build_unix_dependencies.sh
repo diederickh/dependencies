@@ -1281,7 +1281,6 @@ if [ "${build_libav}" = "y" ] ; then
     fi
 fi
 
-exit
 # Move rapid xml sources 
 if [ "${build_rapidxml}" = "y" ] ; then
     if [ ! -f ${bd}/include/rapidxml_iterators.hpp ] ; then
