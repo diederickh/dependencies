@@ -764,8 +764,9 @@ if [ "${build_glfw}" = "y" ] ; then
         cd build
         
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
-            -G "${cmake_generator}" \
-            ..
+              -DGLFW_USE_RETINA=No \
+              -G "${cmake_generator}" \
+              ..
 
         if [ $? != 0 ] ; then
             notify_error "Failed to setup GLFW."
