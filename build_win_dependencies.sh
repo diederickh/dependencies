@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 
 # ----------------------------------------------------------------------- #
 #                                I N F O 
@@ -142,6 +142,32 @@ function notify_error {
     echo ""
 }
 
+function check_svn() {
+    has_svn=$(svn --version)
+    if [ "${has_svn}" = "" ] ; then
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        echo "  No SVN client found. Download e.g. SilkSvn and at it to you PATH variable.  "
+        echo ""
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        exit
+    fi
+}
+
+function check_python() {
+    has_python=$(python --version)
+    if [ "${has_python}" = "" ] ; then
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        echo "  No PYTHON found. Install python and at it to you PATH variable.  "
+        echo ""
+        echo "------------------------------------------------------------------------------"
+        echo ""
+        exit
+    fi
+}
+
 # ----------------------------------------------------------------------- #
 #                D O W N L O A D   D E P E N D E N C I E S 
 # ----------------------------------------------------------------------- #
@@ -267,12 +293,15 @@ fi
 
 # Download libyuv
 if [ "${build_libyuv}" = "y" ] ; then
-    if [ ! -d ${sd}/libyuv ] ; then 
+    if [ ! -d ${sd}/libyuv ] ; then
+        
+        check_svn
+       
         mkdir ${sd}/libyuv
         cd ${sd}/libyuv
         svn checkout http://libyuv.googlecode.com/svn/trunk/ .
-        mv ${sd}/libyuv/CMakeLists.txt ${sd}/libyuv/CMakeLists.txt.bak
-        cp ${sd}/cmakefiles/yuv/CMakeLists.txt ${sd}/libyuv/
+        #mv ${sd}/libyuv/CMakeLists.txt ${sd}/libyuv/CMakeLists.txt.bak
+        #cp ${sd}/cmakefiles/yuv/CMakeLists.txt ${sd}/libyuv/
     fi
 fi
 
@@ -287,7 +316,10 @@ fi
 
 # Download GLAD for GL
 if [ "${build_glad}" = "y" ] ; then
-    if [ ! -d ${sd}/glad ] ; then 
+    if [ ! -d ${sd}/glad ] ; then
+
+        check_python
+        
         cd ${sd}
         git clone --depth 1 --branch master https://github.com/Dav1dde/glad.git glad
 	#git clone https://github.com/Dav1dde/glad.git glad
@@ -295,6 +327,8 @@ if [ "${build_glad}" = "y" ] ; then
 	#git checkout e8b209c109fa03cad5b004b04fdbe027e1a88fcd
     fi
 fi
+
+
 
 # Download the tinylib 
 if [ "${build_tinylib}" = "y" ] ; then
@@ -481,6 +515,18 @@ fi
 # ActiveState Perl in c:\Perl64 and it's in your path.
 
 if [ "${build_openssl}" = "y" ] ; then
+
+    # After the tmp.bat is executed (see below) this will copy the files to the install dir.
+    if [ -f ${sd}/openssl/installed/lib/libeay32.lib ] ; then
+        if [ ! -f ${bd}/bin/libeay32.dll ] ; then
+            cp -r ${sd}/openssl/installed/include/openssl ${bd}/include/
+            cp -r ${sd}/openssl/installed/lib/*.lib ${bd}/lib/
+            cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/
+            cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/
+            cp -r ${sd}/openssl/installed/bin/*.* ${bd}/bin/
+        fi
+    fi
+
     if [ ! -f ${bd}/bin/libeay32.dll ] ; then
         cd ${sd}/openssl
 
@@ -497,12 +543,7 @@ if [ "${build_openssl}" = "y" ] ; then
         echo "call ms\\do_win64a.bat" >> tmp.bat
         echo "nmake -f ${sd_win}\\openssl\\ms\\ntdll.mak" >> tmp.bat
         echo "nmake -f ${sd_win}\\openssl\\ms\\ntdll.mak install" >> tmp.bat
-        echo "cp -r ${sd}/openssl/installed/include/openssl ${bd}/include/" >> tmp.bat
-        echo "cp -r ${sd}/openssl/installed/lib/*.lib ${bd}/lib/" >> tmp.bat
-        echo "cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/" >> tmp.bat
-        echo "cp -r ${sd}/openssl/installed/lib/engines ${bd}/lib/" >> tmp.bat
-        echo "cp -r ${sd}/openssl/installed/bin/*.* ${bd}/bin/" >> tmp.bat
-
+        
         echo ""
         echo ""
         echo "------------------------------------------------------------------------------"
@@ -652,6 +693,7 @@ fi
 
 # Compile libyuv
 if [ "${build_libyuv}" = "y" ] ; then
+
     if [ ! -f ${bd}/lib/yuv.lib ] ; then 
         if [ -d ${sd}/libyuv/build ] ; then
             rm -rf ${sd}/libyuv/build 
@@ -722,8 +764,9 @@ if [ "${build_glfw}" = "y" ] ; then
         cd build
         
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
-            -G "${cmake_generator}" \
-            ..
+              -DGLFW_USE_RETINA=No \
+              -G "${cmake_generator}" \
+              ..
 
         if [ $? != 0 ] ; then
             notify_error "Failed to setup GLFW."
@@ -784,8 +827,10 @@ if [ "${build_libpng}" = "y" ] ; then
     fi        
 fi
 
+
 # Compile remoxly
 if [ "${build_remoxly}" = "y" ] ; then
+    
     if [ ! -f ${bd}/lib/remoxly.lib ] ; then
 
         cd ${sd}/remoxly/projects/gui/build
@@ -828,10 +873,24 @@ if [ "${build_freetype}" ] ; then
 
         cmake --build . --target install --config Release
     fi
-fi 
+fi
 
 # Compile libcurl 
-if [ "${build_curl}" = "y" ] ; then 
+if [ "${build_curl}" = "y" ] ; then
+
+    # This snippet copies the lib + include files to the install dir after
+    # the tmp.bat has been executed (see below).
+    if [ -d ${sd}/curl/builds ] ; then
+        cd ${sd}/curl/builds/
+        build_dir=`ls | sort -n | head -1`
+        if [ -f ${build_dir}/lib/libcurl_a.lib ] ; then
+            if [ ! -f ${bd}/lib/libcurl_a.lib ] ; then
+                cp -r ${build_dir}/lib/* ${bd}/lib/
+                cp -r ${build_dir}/include/curl ${bd}/include/
+            fi
+        fi
+    fi
+    
     if [ ! -f ${bd}/lib/libcurl_a.lib ] ; then
 
         cd ${sd}/curl
@@ -848,14 +907,17 @@ if [ "${build_curl}" = "y" ] ; then
         if [ "${is_64bit}" = "y" ] ; then
             bit="x64"
         fi
-        
+ 
         echo "@echo off" >> tmp.bat
+        echo "SET PATH=%PATH%:${bd_win}/include:${bd_win}/lib" >> tmp.bat
         echo "cd winbuild" >> tmp.bat
         echo "nmake /f Makefile.vc mode=static VC=12 WITH_DEVEL=${bd_win} WITH_SSL=static ENABLE_SSPI=yes ENABLE_IPV6=yes ENABLE_IDN=yes ENABLE_WINSSL=no DEBUG=no MACHINE=${bit}" >> tmp.bat
         echo "cd ..\builds" >> tmp.bat
         echo "FOR /F \" tokens=*\" %%i IN ('dir /b /ad-h /od') DO (SET a=%%i)  " >> tmp.bat
-        echo "cp -r ${sd}/curl/builds/%a%/include/curl ${bd}/include/" >> tmp.bat
-        echo "cp -r ${sd}/curl/builds/%a%/lib/*.lib ${bd}/lib/" >> tmp.bat
+        #echo "xcopy ${sd_win}/curl/builds/%a%/include/ ${bd_win}/include /e" >> tmp.bat
+        #echo "xcopy ${sd_win}/curl/builds/%a%/lib ${bd_win}/lib /e" >> tmp.bat
+        #echo "cp -r ${sd}/curl/builds/%a%/include/curl ${bd}/include/" >> tmp.bat
+        #echo "cp -r ${sd}/curl/builds/%a%/lib/*.lib ${bd}/lib/" >> tmp.bat
         echo "cd .." >> tmp.bat
 
         echo ""
@@ -918,11 +980,16 @@ fi
 if [ "${build_libjpg}" = "y" ] ; then
 
     if [ ! -f ${bd}/lib/jpeg.lib ] ; then
+
         cd ${sd}/libjpeg
         if [ ! -d build.release ] ; then 
             mkdir build.release
         fi
 
+        if [ ! -f jconfig.h ] ; then
+            cp jconfig.vc jconfig.h
+        fi
+        
         cd build.release 
 
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
