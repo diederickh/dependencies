@@ -102,6 +102,7 @@ fi
 # build_crypt=y           # openwall crypt library
 # build_sdl1=y            # libsdl 1.*
 # build_sdl2=y            # libsdl 2.*
+# build_tracker_cmt=y     # cmt tracker, depends opencv (only builds cmt util for now)
 
 # -----------------------------------------------------------------------# 
 
@@ -559,11 +560,14 @@ fi
 if [ "${build_opencv}" = "y" ] ; then
     if [ ! -d ${sd}/opencv ] ; then 
         cd ${sd}
-        if [ ! -f opencv.zip ] ; then
-            curl -L -o opencv.zip https://github.com/Itseez/opencv/archive/3.0.0-alpha.zip
+        if [ ! -f ${sd}/downloads/opencv.zip ] ; then
+            curl -L -o opencv.zip https://github.com/Itseez/opencv/archive/3.0.0.zip
+        else
+            mv ${sd}/downloads/opencv.zip/opencv.zip
         fi
         unzip opencv.zip
-        mv opencv-3.0.0-alpha opencv
+        mv opencv-3.0.0 opencv
+        mv opencv.zip ${sd}/downloads
     fi
 fi
 
@@ -930,6 +934,14 @@ if [ "${build_sdl1}" = "y" ] ; then
     fi
 fi
 
+# Download CMT racker (needs opencv)
+if [ "${build_tracker_cmt}" = "y" ] ; then
+    if [ ! -d ${sd}/tracker_cmt ] ; then
+        cd ${sd}
+        git clone https://github.com/gnebehay/CppMT.git tracker_cmt
+    fi
+fi
+
 # Cleanup some files we don't need anymore.
 if [ -f ${sd}/openssl.tar.gz ] ; then
     rm ${sd}/openssl.tar.gz
@@ -1276,12 +1288,13 @@ if [ "${build_libav}" = "y" ] ; then
         ./configure --prefix=${bd} \
                     --enable-gpl \
                     --enable-libx264
+
         make
         make install
     fi
 fi
 
-exit
+
 # Move rapid xml sources 
 if [ "${build_rapidxml}" = "y" ] ; then
     if [ ! -f ${bd}/include/rapidxml_iterators.hpp ] ; then
@@ -1373,7 +1386,7 @@ if [ "${build_opencv}" = "y" ] ; then
             -DBUILD_opencv_cuda=0, \
             -DBUILD_opencv_features2d=1 \
             -DBUILD_opencv_flann=1 \
-            -DBUILD_opencv_highgui=0 \
+            -DBUILD_opencv_highgui=1 \
             -DBUILD_opencv_imgproc=1 \
             -DBUILD_opencv_legacy=0 \
             -DBUILD_opencv_ml=1 \
@@ -2005,6 +2018,31 @@ if [ "${build_sdl2}" = "y" ] ; then
         
         cmake --build . --target install --config Release
     fi
+fi
+
+# Compile Tracker CMT
+if [ "${build_tracker_cmt}" = "y" ] ; then
+    
+    cd ${sd}/tracker_cmt
+    
+    if [ ! -d build.release ] ; then
+        mkdir build.release
+    fi
+
+    cd build.release
+    cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DOpenCV_DIR=${bd} \
+          ${cmake_osx_architectures} \
+          ..
+
+    if [ $? != 0 ] ; then
+        echo "Failed to build tracker cmt."
+        exit
+    fi
+
+    cmake --build . --config Release
+          
 fi
 
 # Compile irrsi, needs glib which we need to test (no time atm)
