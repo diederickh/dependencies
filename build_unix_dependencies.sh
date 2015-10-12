@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+# set -x
 # ----------------------------------------------------------------------- #
 #                                I N F O 
 # ----------------------------------------------------------------------- #
@@ -109,8 +109,6 @@ fi
 # ----------------------------------------------------------------------- #
 #                E N V I R O N M E N T  V A R I A B L E S 
 # ----------------------------------------------------------------------- #
-
-set -x
 
 cflagsorig=${CFLAGS}
 ldflagsorig=${LDFLAGS}
@@ -1259,7 +1257,18 @@ if [ "${build_glfw}" = "y" ] ; then
             -DGLFW_USE_RETINA=No \
             ${cmake_osx_architectures} \
             ..
+
+        if [ $? -ne 0 ] ; then
+            echo "ERROR: failed to configure GLFW. "
+            exit;
+        fi
+        
         cmake --build . --target install
+        
+        if [ $? -ne 0 ] ; then
+            echo "ERROR: failed to build GLFW. "
+            exit;
+        fi
 
         export CFLAGS=${cfcopy}
         export LDFLAGS=${ldcopy}
