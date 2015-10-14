@@ -103,6 +103,8 @@ fi
 # build_sdl1=y            # libsdl 1.*
 # build_sdl2=y            # libsdl 2.*
 # build_tracker_cmt=y     # cmt tracker, depends opencv (only builds cmt util for now)
+# build_ffmpeg            # builds git version. (not ready)
+# build_soundio           # build libsoundio
 
 # -----------------------------------------------------------------------# 
 
@@ -939,6 +941,33 @@ if [ "${build_tracker_cmt}" = "y" ] ; then
     if [ ! -d ${sd}/tracker_cmt ] ; then
         cd ${sd}
         git clone https://github.com/gnebehay/CppMT.git tracker_cmt
+    fi
+fi
+
+# Download ffmpeg
+if [ "${build_ffmpeg}" = "y" ] ; then
+    if [ ! -d ${sd}/ffmpeg ] ; then
+        cd ${sd}
+        git clone --depth 1 --branch master git://source.ffmpeg.org/ffmpeg.git ffmpeg
+    fi
+fi
+
+# Download VLC (NOT YET IMPLEMENTED)
+if [ "${build_vlc}" = "y" ] ; then
+    if [ ! -d ${sd}/vlc ] ; then
+        git clone --depth 1 --branch master git://git.videolan.org/vlc.git vlc
+    fi
+fi
+
+# Download libsoundio
+if [ "${build_soundio}" = "y" ] ; then
+    if [ 1 -d ${sd}/soundio ] ; then
+        mkdir ${sd}/soundio
+        cd ${sd}/
+        curl -L -o soundio.tar.gz http://libsound.io/release/libsoundio-1.0.2.tar.gz
+        tar -zxvf soundio.tar.gz
+        mv libsoundio-* soundio
+        mv soundio/libsoundio-1.0.2/* soundio/
     fi
 fi
 
@@ -2042,6 +2071,37 @@ if [ "${build_tracker_cmt}" = "y" ] ; then
 
     cmake --build . --config Release
           
+fi
+
+# Compile ffmpeg
+if [ "${build_ffmpeg}" = "y" ] ; then
+    if [ ! -f ${bd}/bin/ffmpeg ] ; then 
+        cd ${sd}/ffmpeg
+        ./configure --prefix=${bd}
+        make
+        make install
+    fi
+fi
+
+if [ "${build_soundio}" = "y" ] ; then
+
+    if [ ! -f ${bd}/lib/libsoundio.a ] ; then
+        cd ${sd}/soundio
+
+        if [ ! -d build.release ] ; then
+            mkdir build.release
+        fi
+
+        cd build.release
+        
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              ${cmake_osx_architectures} \
+              -DCMAKE_BUILD_TYPE=Release \
+              ..
+
+        make -j 10
+        make install
+    fi
 fi
 
 # Compile irrsi, needs glib which we need to test (no time atm)
