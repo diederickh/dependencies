@@ -959,7 +959,7 @@ fi
 
 # Download libsoundio
 if [ "${build_soundio}" = "y" ] ; then
-    if [ 1 -d ${sd}/soundio ] ; then
+    if [ ! -d ${sd}/soundio ] ; then
         mkdir ${sd}/soundio
         cd ${sd}/
         curl -L -o soundio.tar.gz http://libsound.io/release/libsoundio-1.0.2.tar.gz
