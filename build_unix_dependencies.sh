@@ -1680,20 +1680,23 @@ if [ "${build_fontconfig}" = "y" ] ; then
         export PKG_CONFIG_PATH=${bd}/lib/pkgconfig
         export FREETYPE_CFLAGS="-I${bd}/include/freetype2/"
         export FREETYPE_LIBS="-lfreetype"
+        export LIBS="-L${db}/lib -lfreetype -lpng -lz -lbz2"
         cd ${sd}/fontconfig
         ./configure --prefix=${bd} \
             --enable-static=yes \
             --enable-shared=no
         make
         make install
+        export LIBS=""
     fi
 fi
 
 # Build cairo
 # note: 2015.05.08, mac build failed .. changed it a bit
-if [ "${build_cairo}" = "y" ] ; then 
+if [ "${build_cairo}" = "y" ] ; then
+
     if [ ! -f ${bd}/lib/libcairo.a ] ; then
-        
+
         cd ${sd}/cairo
 
         export PKG_CONFIG=${bd}/bin/pkg-config
@@ -1716,14 +1719,18 @@ if [ "${build_cairo}" = "y" ] ; then
                           --enable-static=yes \
                           --enable-shared=no
         fi
-
+        
+        ./configure --prefix=${bd} \
+                    --disable-dependency-tracking \
+                    --disable-xlib \
+                    --enable-static=yes \
+                    --enable-shared=no
         make
         make install
 
         export LIBS=""
     fi
 fi
-
 
 # Build pango
 if [ "${build_pango}" = "y" ] ; then 
