@@ -1,5 +1,5 @@
 #!/bin/sh
-# set -x
+ set -x
 # ----------------------------------------------------------------------- #
 #                                I N F O 
 # ----------------------------------------------------------------------- #
@@ -365,7 +365,6 @@ fi
 
 # Download GLAD for GL
 if [ "${build_glad}" = "y" ] ; then
-    echo "GET GLAD"
     if [ ! -d ${sd}/glad ] ; then 
         cd ${sd}
         git clone --depth 1 --branch master https://github.com/Dav1dde/glad.git glad
@@ -1545,9 +1544,10 @@ if [ "${build_freetype}" = "y" ] ; then
         cd ${sd}/freetype2
 
         
-        if [ -d ${sd}/freetype2/build ] ; then 
+        if [ -d ${sd}/freetype2/build ] ; then
             rm -rf ${sd}/freetype2/build
         fi
+
         mkdir ${sd}/freetype2/build
         cd ${sd}/freetype2/build
 
@@ -1582,23 +1582,25 @@ if [ "${build_harfbuzz}" = "y" ] ; then
         export FREETYPE_CFLAGS="-I${bd}/include/ -I${bd}/include/freetype2 -L${bd}/lib/" 
         export FREETYPE_LIBS="-lfreetype"
 
-        if [ "${is_mac}" = "y" ] ; then 
+        if [ "${is_mac}" = "y" ] ; then
+            export LDFLAGS="-v -L${bd}/lib -lz -lpng -lbz2"
+
             ./configure --prefix=${bd} \
                         --with-coretext=yes \
                         --enable-static=yes \
                         --enable-shared=no \
-                        ${hb_freetype} 
+                        ${hb_freetype}
 
         elif [ "${is_linux}" = "y" ] ; then
             ./configure --prefix=${bd} \
                         --enable-static=yes \
                         --enable-shared=no \
-                        ${hb_freetype} 
+                        ${hb_freetype}
         fi
 
-            make
-            make install
-        fi
+        make 
+        make install
+    fi
 fi
 
 # Compile libcurl 
@@ -1717,6 +1719,8 @@ if [ "${build_cairo}" = "y" ] ; then
 
         make
         make install
+
+        export LIBS=""
     fi
 fi
 
@@ -1803,7 +1807,11 @@ fi
 
 # Compile portaudio
 if [ "${build_portaudio}" = "y" ] ; then
-    compile portaudio lib/libportaudio.a "--enable-static=yes"
+    # update 2015.10.14 couldn't compile on Mac. 
+    export CXXFLAGS="${CXXFLAGS} -Wno-deprecated"
+    export CFLAGS="${CFLAGS} -Wno-deprecated"
+    export LDFLAGS="${LDFLAGS} -Wno-deprecated"
+    compile portaudio lib/libportaudio.a "--enable-static=yes --enable-mac-universal=no"
 fi
 
 # Compile video capture
