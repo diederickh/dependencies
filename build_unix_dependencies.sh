@@ -2128,6 +2128,7 @@ if [ "${build_soundio}" = "y" ] ; then
     fi
 fi
 
+exit
 # Compile irrsi, needs glib which we need to test (no time atm)
 #if [ "${build_irssi}" = "y" ] ; then
 #    cd ${sd}/irssi
