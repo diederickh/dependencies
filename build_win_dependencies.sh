@@ -456,6 +456,22 @@ if [ "${build_jansson}" = "y" ] ; then
     fi
 fi
 
+# Download cairo
+if [ "${build_cairo}" = "y" ] ; then
+    if [ ! -d ${sd}/cairo ] ; then
+        cd ${sd}
+        git clone --depth 1 git://anongit.freedesktop.org/git/cairo
+    fi
+fi
+
+# Download pixman (needed by cairo)
+if [ "${build_pixman}" = "y" ] ; then
+    if [ ! -d ${sd}/pixman ] ; then
+        cd ${sd}
+        git clone --depth 1 git://anongit.freedesktop.org/git/pixman.git
+    fi
+fi
+
 # ----------------------------------------------------------------------- #
 #                C O M P I L E   D E P E N D E N C I E S 
 # ----------------------------------------------------------------------- #
@@ -722,8 +738,9 @@ if [ "${build_glfw}" = "y" ] ; then
         cd build
         
         cmake -DCMAKE_INSTALL_PREFIX=${bd} \
-            -G "${cmake_generator}" \
-            ..
+              -DCMAKE_BUILD_TYPE=Release \
+              -G "${cmake_generator}" \
+              ..
 
         if [ $? != 0 ] ; then
             notify_error "Failed to setup GLFW."
@@ -978,5 +995,45 @@ if [ "${build_jansson}" = "y" ] ; then
     fi
 fi
 
+# 2015.10.15 - disabled because they don't compile on win.
+# Compile cairo
+if [ 0 -eq 1 ] ; then
+    if [ "${build_cairo}" = "y" ] ; then
+        
+        cd ${sd}/cairo
+        if [ ! -d build.release ] ; then 
+            mkdir build.release
+        fi
 
+        cd build.release 
 
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH=${bd} \
+              -DPNG_LIB=${bd}/lib/libpng16_static.lib \
+              -G "${cmake_generator}" \
+              ../
+
+        cmake --build . --target install --config Release
+        echo "ok"
+    fi
+
+    # Compile pixman
+    if [ "${build_pixman}" = "y" ] ; then
+        
+        cd ${sd}/pixman
+        if [ ! -d build.release ] ; then 
+            mkdir build.release
+        fi
+
+        cd build.release 
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH=${bd} \
+              -G "${cmake_generator}" \
+              ../
+
+        cmake --build . --target install --config Release
+    fi
+fi
