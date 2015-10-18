@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+ set -x
 # ----------------------------------------------------------------------- #
 #                                I N F O 
 # ----------------------------------------------------------------------- #
@@ -100,14 +100,17 @@ fi
 # build_httpparser=n      # joyent http parser
 # build_screencapture=n   # the screen capturer.
 # build_crypt=y           # openwall crypt library
+# build_sdl1=y            # libsdl 1.*
+# build_sdl2=y            # libsdl 2.*
+# build_tracker_cmt=y     # cmt tracker, depends opencv (only builds cmt util for now)
+# build_ffmpeg            # builds git version. (not ready)
+# build_soundio           # build libsoundio
 
 # -----------------------------------------------------------------------# 
 
 # ----------------------------------------------------------------------- #
 #                E N V I R O N M E N T  V A R I A B L E S 
 # ----------------------------------------------------------------------- #
-
-set -x
 
 cflagsorig=${CFLAGS}
 ldflagsorig=${LDFLAGS}
@@ -292,6 +295,12 @@ if [ "${build_mongoose}" = "y" ] ; then
         cp ${sd}/mongoose/mongoose.c ${bd}/src/
         cp ${sd}/mongoose/mongoose.h ${bd}/include/
     fi
+
+    if [ ! -f ${bd}/src/ssl_wrapper.c ] ; then
+        cp ${sd}/mongoose/examples/websocket_ssl_proxy/ssl_wrapper.c ${bd}/src
+        cp ${sd}/mongoose/examples/websocket_ssl_proxy/ssl_wrapper.h ${bd}/include
+        cp ${sd}/mongoose/examples/websocket_ssl_proxy/net_skeleton.h ${bd}/include
+    fi
 fi
 
 # Download net_skeleton (signaling)
@@ -305,6 +314,7 @@ if [ "${build_netskeleton}" = "y" ] ; then
         cp ${sd}/net_skeleton/net_skeleton.c ${bd}/src/
         cp ${sd}/net_skeleton/net_skeleton.h ${bd}/include/
     fi
+
 fi
 
 # Download ssl_wrapper (signaling)
@@ -355,7 +365,6 @@ fi
 
 # Download GLAD for GL
 if [ "${build_glad}" = "y" ] ; then
-    echo "GET GLAD"
     if [ ! -d ${sd}/glad ] ; then 
         cd ${sd}
         git clone --depth 1 --branch master https://github.com/Dav1dde/glad.git glad
@@ -550,11 +559,14 @@ fi
 if [ "${build_opencv}" = "y" ] ; then
     if [ ! -d ${sd}/opencv ] ; then 
         cd ${sd}
-        if [ ! -f opencv.zip ] ; then
-            curl -L -o opencv.zip https://github.com/Itseez/opencv/archive/3.0.0-alpha.zip
+        if [ ! -f ${sd}/downloads/opencv.zip ] ; then
+            curl -L -o opencv.zip https://github.com/Itseez/opencv/archive/3.0.0.zip
+        else
+            mv ${sd}/downloads/opencv.zip/opencv.zip
         fi
         unzip opencv.zip
-        mv opencv-3.0.0-alpha opencv
+        mv opencv-3.0.0 opencv
+        mv opencv.zip ${sd}/downloads
     fi
 fi
 
@@ -579,7 +591,7 @@ if [ "${build_pixman}" = "y" ] ; then
     fi 
 fi
 
-# Download cairo 
+# Download gettext 
 if [ "${build_gettext}" = "y" ] ; then 
     if [ ! -d ${sd}/gettext ] ; then
         cd ${sd}
@@ -901,6 +913,61 @@ if [ "${build_crypt}" = "y" ] ; then
     fi
 fi
 
+# Download libsdl 2
+if [ "${build_sdl2}" = "y" ] ; then
+    if [ ! -d ${sd}/sdl2 ] ; then
+        cd ${sd}
+        curl -L -o sdl2.tar.gz https://www.libsdl.org/release/SDL2-2.0.3.tar.gz
+        tar -zxvf sdl2.tar.gz
+        mv SDL2-2.0.3 sdl2
+    fi
+fi
+
+# Download libsdl 1
+if [ "${build_sdl1}" = "y" ] ; then
+    if [ ! -d ${sd}/sdl1 ] ; then
+        cd ${sd}
+        curl -L -o sdl1.tar.gz https://www.libsdl.org/release/SDL-1.2.15.tar.gz
+        tar -zxvf sdl1.tar.gz
+        mv SDL-1.2.15 sdl1
+    fi
+fi
+
+# Download CMT racker (needs opencv)
+if [ "${build_tracker_cmt}" = "y" ] ; then
+    if [ ! -d ${sd}/tracker_cmt ] ; then
+        cd ${sd}
+        git clone https://github.com/gnebehay/CppMT.git tracker_cmt
+    fi
+fi
+
+# Download ffmpeg
+if [ "${build_ffmpeg}" = "y" ] ; then
+    if [ ! -d ${sd}/ffmpeg ] ; then
+        cd ${sd}
+        git clone --depth 1 --branch master git://source.ffmpeg.org/ffmpeg.git ffmpeg
+    fi
+fi
+
+# Download VLC (NOT YET IMPLEMENTED)
+if [ "${build_vlc}" = "y" ] ; then
+    if [ ! -d ${sd}/vlc ] ; then
+        git clone --depth 1 --branch master git://git.videolan.org/vlc.git vlc
+    fi
+fi
+
+# Download libsoundio
+if [ "${build_soundio}" = "y" ] ; then
+    if [ ! -d ${sd}/soundio ] ; then
+        mkdir ${sd}/soundio
+        cd ${sd}/
+        curl -L -o soundio.tar.gz http://libsound.io/release/libsoundio-1.0.2.tar.gz
+        tar -zxvf soundio.tar.gz
+        mv libsoundio-* soundio
+        mv soundio/libsoundio-1.0.2/* soundio/
+    fi
+fi
+
 # Cleanup some files we don't need anymore.
 if [ -f ${sd}/openssl.tar.gz ] ; then
     rm ${sd}/openssl.tar.gz
@@ -1006,6 +1073,15 @@ if [ -f ${sd}/lame.tar.gz ] ; then
 fi
 if [ -f ${sd}/m4.tar.gz ] ; then
     rm ${sd}/m4.tar.gz
+fi
+if [ -f ${sd}/sdl1.tar.gz ] ; then
+    rm ${sd}/sdl1.tar.gz
+fi
+if [ -f ${sd}/sdl2.tar.gz ] ; then
+    rm ${sd}/sdl2.tar.gz
+fi
+if [ -f ${sd}/crypt.tar.gz ] ; then
+    rm ${sd}/crypt.tar.gz
 fi
 
 # ----------------------------------------------------------------------- #
@@ -1209,7 +1285,18 @@ if [ "${build_glfw}" = "y" ] ; then
             -DGLFW_USE_RETINA=No \
             ${cmake_osx_architectures} \
             ..
+
+        if [ $? -ne 0 ] ; then
+            echo "ERROR: failed to configure GLFW. "
+            exit;
+        fi
+        
         cmake --build . --target install
+        
+        if [ $? -ne 0 ] ; then
+            echo "ERROR: failed to build GLFW. "
+            exit;
+        fi
 
         export CFLAGS=${cfcopy}
         export LDFLAGS=${ldcopy}
@@ -1235,7 +1322,10 @@ fi
 if [ "${build_libav}" = "y" ] ; then 
     if [ ! -f ${bd}/lib/libavcodec.a ] ; then
         cd ${sd}/libav
-        ./configure --prefix=${bd} --enable-gpl 
+        ./configure --prefix=${bd} \
+                    --enable-gpl \
+                    --enable-libx264
+
         make
         make install
     fi
@@ -1332,7 +1422,7 @@ if [ "${build_opencv}" = "y" ] ; then
             -DBUILD_opencv_cuda=0, \
             -DBUILD_opencv_features2d=1 \
             -DBUILD_opencv_flann=1 \
-            -DBUILD_opencv_highgui=0 \
+            -DBUILD_opencv_highgui=1 \
             -DBUILD_opencv_imgproc=1 \
             -DBUILD_opencv_legacy=0 \
             -DBUILD_opencv_ml=1 \
@@ -1454,9 +1544,10 @@ if [ "${build_freetype}" = "y" ] ; then
         cd ${sd}/freetype2
 
         
-        if [ -d ${sd}/freetype2/build ] ; then 
+        if [ -d ${sd}/freetype2/build ] ; then
             rm -rf ${sd}/freetype2/build
         fi
+
         mkdir ${sd}/freetype2/build
         cd ${sd}/freetype2/build
 
@@ -1491,23 +1582,25 @@ if [ "${build_harfbuzz}" = "y" ] ; then
         export FREETYPE_CFLAGS="-I${bd}/include/ -I${bd}/include/freetype2 -L${bd}/lib/" 
         export FREETYPE_LIBS="-lfreetype"
 
-        if [ "${is_mac}" = "y" ] ; then 
+        if [ "${is_mac}" = "y" ] ; then
+            export LDFLAGS="-v -L${bd}/lib -lz -lpng -lbz2"
+
             ./configure --prefix=${bd} \
                         --with-coretext=yes \
                         --enable-static=yes \
                         --enable-shared=no \
-                        ${hb_freetype} 
+                        ${hb_freetype}
 
         elif [ "${is_linux}" = "y" ] ; then
             ./configure --prefix=${bd} \
                         --enable-static=yes \
                         --enable-shared=no \
-                        ${hb_freetype} 
+                        ${hb_freetype}
         fi
 
-            make
-            make install
-        fi
+        make 
+        make install
+    fi
 fi
 
 # Compile libcurl 
@@ -1587,18 +1680,25 @@ if [ "${build_fontconfig}" = "y" ] ; then
         export PKG_CONFIG_PATH=${bd}/lib/pkgconfig
         export FREETYPE_CFLAGS="-I${bd}/include/freetype2/"
         export FREETYPE_LIBS="-lfreetype"
+        export LIBS="-L${db}/lib -lfreetype -lpng -lz -lbz2"
         cd ${sd}/fontconfig
         ./configure --prefix=${bd} \
             --enable-static=yes \
             --enable-shared=no
         make
         make install
+        export LIBS=""
     fi
 fi
 
-# Build cairo 
-if [ "${build_cairo}" = "y" ] ; then 
-    if [ ! -f ${bd}/lib/libcairo.a ] ; then 
+# Build cairo
+# note: 2015.05.08, mac build failed .. changed it a bit
+if [ "${build_cairo}" = "y" ] ; then
+
+    if [ ! -f ${bd}/lib/libcairo.a ] ; then
+
+        cd ${sd}/cairo
+
         export PKG_CONFIG=${bd}/bin/pkg-config
         export PKG_CONFIG_PATH=${bd}/lib/pkgconfig
         export pixman_CFLAGS=-I${bd}/include/pixman-1/
@@ -1612,22 +1712,25 @@ if [ "${build_cairo}" = "y" ] ; then
             export LIBS="-lfreetype -lfontconfig"
         fi
 
-        cd ${sd}/cairo
         if [ ! -f ./configure ] ; then
-            ./autogen.sh
+            ./autogen.sh  --prefix=${bd} \
+                          --disable-dependency-tracking \
+                          --disable-xlib \
+                          --enable-static=yes \
+                          --enable-shared=no
         fi
-
-        ./configure \
-            --prefix=${bd} \
-            --disable-dependency-tracking \
-            --disable-xlib \
-            --enable-static=yes \
-            --enable-shared=no
+        
+        ./configure --prefix=${bd} \
+                    --disable-dependency-tracking \
+                    --disable-xlib \
+                    --enable-static=yes \
+                    --enable-shared=no
         make
         make install
+
+        export LIBS=""
     fi
 fi
-
 
 # Build pango
 if [ "${build_pango}" = "y" ] ; then 
@@ -1711,7 +1814,11 @@ fi
 
 # Compile portaudio
 if [ "${build_portaudio}" = "y" ] ; then
-    compile portaudio lib/libportaudio.a "--enable-static=yes"
+    # update 2015.10.14 couldn't compile on Mac. 
+    export CXXFLAGS="${CXXFLAGS} -Wno-deprecated"
+    export CFLAGS="${CFLAGS} -Wno-deprecated"
+    export LDFLAGS="${LDFLAGS} -Wno-deprecated"
+    compile portaudio lib/libportaudio.a "--enable-static=yes --enable-mac-universal=no"
 fi
 
 # Compile video capture
@@ -1928,10 +2035,97 @@ if [ "${build_httpparser}" = "y" ] ; then
     fi
 fi
 
+# Testing with Crypt (@todo finish...)
 if [ "${build_crypt}" = "y" ] ; then
-
     cd ${sd}/crypt_blowfish
     make
+fi
+
+# Compile SDL 1 (doesn't compile on mac 10.10)
+if [ "${build_sdl1}" = "y" ] ; then
+    cd ${sd}/sdl1
+    ./configure --prefix=${bd} \
+                --enable-static=yes
+    make
+    make install
+fi
+
+
+# Compile SDL 2
+if [ "${build_sdl2}" = "y" ] ; then
+    if [ ! -f ${bd}/libSDL2.a ] ; then 
+        cd ${sd}/sdl2
+
+        if [ -d build.release ] ; then
+            rm -rf build.release
+        fi
+
+        mkdir build.release
+        cd build.release 
+
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              ${cmake_osx_architectures} \
+              -DCMAKE_BUILD_TYPE=Release \
+              ..
+        
+        cmake --build . --target install --config Release
+    fi
+fi
+
+# Compile Tracker CMT
+if [ "${build_tracker_cmt}" = "y" ] ; then
+    
+    cd ${sd}/tracker_cmt
+    
+    if [ ! -d build.release ] ; then
+        mkdir build.release
+    fi
+
+    cd build.release
+    cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DOpenCV_DIR=${bd} \
+          ${cmake_osx_architectures} \
+          ..
+
+    if [ $? != 0 ] ; then
+        echo "Failed to build tracker cmt."
+        exit
+    fi
+
+    cmake --build . --config Release
+          
+fi
+
+# Compile ffmpeg
+if [ "${build_ffmpeg}" = "y" ] ; then
+    if [ ! -f ${bd}/bin/ffmpeg ] ; then 
+        cd ${sd}/ffmpeg
+        ./configure --prefix=${bd}
+        make
+        make install
+    fi
+fi
+
+if [ "${build_soundio}" = "y" ] ; then
+
+    if [ ! -f ${bd}/lib/libsoundio.a ] ; then
+        cd ${sd}/soundio
+
+        if [ ! -d build.release ] ; then
+            mkdir build.release
+        fi
+
+        cd build.release
+        
+        cmake -DCMAKE_INSTALL_PREFIX=${bd} \
+              ${cmake_osx_architectures} \
+              -DCMAKE_BUILD_TYPE=Release \
+              ..
+
+        make -j 10
+        make install
+    fi
 fi
 
 # Compile irrsi, needs glib which we need to test (no time atm)
