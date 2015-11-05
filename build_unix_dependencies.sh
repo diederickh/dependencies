@@ -1249,9 +1249,11 @@ if [ "${build_glad}" = "y" ] ; then
         fi
         cd ${sd}/glad
         if [ -f /usr/bin/python2 ] ; then
-            python2 main.py --generator=c --out-path=gl --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
+            #  --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
+            python2 main.py --generator=c --out-path=gl
         else
-            python main.py --generator=c --out-path=gl --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
+            # --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
+            python main.py --generator=c --out-path=gl 
         fi
         cp -r ${sd}/glad/gl/include/glad ${bd}/include/
         cp -r ${sd}/glad/gl/include/KHR ${bd}/include/
