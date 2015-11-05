@@ -367,7 +367,9 @@ fi
 if [ "${build_glad}" = "y" ] ; then
     if [ ! -d ${sd}/glad ] ; then 
         cd ${sd}
-        git clone --depth 1 --branch master https://github.com/Dav1dde/glad.git glad
+        mkdir glad
+        #git clone --depth 1 --branch master https://github.com/Dav1dde/glad.git glad
+        sudo pip install --upgrade git+https://github.com/dav1dde/glad.git#egg=glad
     fi
 fi
 
@@ -1250,10 +1252,12 @@ if [ "${build_glad}" = "y" ] ; then
         cd ${sd}/glad
         if [ -f /usr/bin/python2 ] ; then
             #  --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
-            python2 main.py --generator=c --out-path=gl
+            #python2 main.py --generator=c --out-path=gl
+            python2 -m glad --generator=c --out-path=gl
         else
             # --extensions GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
-            python main.py --generator=c --out-path=gl 
+            #python main.py --generator=c --out-path=gl 
+            python -m glad --generator=c --out-path=gl
         fi
         cp -r ${sd}/glad/gl/include/glad ${bd}/include/
         cp -r ${sd}/glad/gl/include/KHR ${bd}/include/
