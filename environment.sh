@@ -15,27 +15,20 @@
 # Make sure the user passes the correct architecture.
 if [ "${1}" = "" ] ; then
     echo ""
-    echo "Usage: ${0} [32,64,] [debug] "
+    echo "Usage: ${0} [32,64] [debug] [makefile, xcode,vs2010,vs2012,vs2013,vs2015]"
     echo ""
     echo "Example: compile 32bit version: ${0} 32 "
     echo "Example: compile 64bit version: ${0} 64 debug"
+    echo "Example: compile 64bit version for VS 2015: ${0} 64 debug vs2015"
     echo ""
     exit
 fi
-
-is_debug=n
-
-for var in "$@" 
-do
-    if [ "${var}" = "debug" ] ; then
-        is_debug=y
-    fi
-done
 
 # Detect if we're running on windows, mac, linux.
 is_mac=n
 is_linux=n
 is_win=n
+is_debug=n
 is_64bit=""
 is_32bit=""
 in_arch=${1}
@@ -52,6 +45,25 @@ cmake_build_config="" # "Release" or "Debug", used for `cmake --build . --config
 debug_flag="" # Set to _debug when building a debug version. You can add _debug to your debug build targets.
 debugger="" # Set to the debugger, e.g. gdb or lldb
 build_dir="" # Set to the build dir, e.g. build.release or build.debug
+
+for var in "$@" 
+do
+    if [ "${var}" = "debug" ] ; then
+        is_debug=y
+    elif [ "${var}" = "makefile" ] ; then
+        cmake_generator="Unix Makefiles"
+    elif [ "${var}" = "Xcode" ] ; then
+        cmake_generator="Xcode"
+    elif [ "${var}" = "vs2010" ] ; then
+        cmake_generator="Visual Studio 10 2010"
+    elif [ "${var}" = "vs2012" ] ; then
+        cmake_generator="Visual Studio 11 2012"
+    elif [ "${var}" = "vs2013" ] ; then
+        cmake_generator="Visual Studio 12 2014"
+    elif [ "${var}" = "vs2015" ] ; then
+        cmake_generator="Visual Studio 14 2015"
+    fi
+done
 
 if [ "${in_arch}" = "32" ] ; then
     tri_arch="i386"
@@ -73,34 +85,54 @@ if [ "$(uname)" = "Darwin" ]; then
     is_mac=y
     tri_platform="mac"
     tri_compiler="clang"
-    cmake_generator="Xcode"
+    if [ "${cmake_generator}" = "" ] ; then
+        cmake_generator="Xcode"
+    fi
 elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     is_linux=y
     tri_platform="linux"
     tri_compiler="gcc"
-    cmake_generator="Unix Makefiles"
+    if [ "${cmake_generator}" = "" ] ; then
+        cmake_generator="Unix Makefiles"
+    fi
 elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
     # @todo detect what compiler is used
     is_win="y"
 
     if [ "${vs}" = "2010" ] ; then
         tri_compiler="vs2010"
-        cmake_generator="Visual Studio 10 2010"
+        if [ "${cmake_generator}" = "" ] ; then
+            cmake_generator="Visual Studio 10 2010"
+            if [ "${is_64bit}" = "y" ] ; then
+                cmake_generator="${cmake_generator} Win64"
+            fi
+        fi
     elif [ "${vs}" = "2012" ] ; then
         tri_compiler="vs2012"
-        cmake_generator="Visual Studio 11 2012"
-
+        if [ "${cmake_generator}" = "" ] ; then
+            cmake_generator="Visual Studio 11 2012"
+            if [ "${is_64bit}" = "y" ] ; then
+                cmake_generator="${cmake_generator} Win64"
+            fi
+        fi
     elif [ "${vs}" = "2013" ] ; then
         tri_compiler="vs2013"
-        cmake_generator="Visual Studio 12 2013"
+        if [ "${cmake_generator}" = "" ] ; then
+            cmake_generator="Visual Studio 12 2013"
+            if [ "${is_64bit}" = "y" ] ; then
+                cmake_generator="${cmake_generator} Win64"
+            fi
+        fi
     else
-        cmake_generator="Visual Studio 12 2013"
-        tri_compiler="vs2012"
+        if [ "${cmake_generator}" = "" ] ; then
+            cmake_generator="Visual Studio 12 2013"
+            if [ "${is_64bit}" = "y" ] ; then
+                cmake_generator="${cmake_generator} Win64"
+            fi
+        fi
+        tri_compiler="vs2013"
     fi
 
-    if [ "${is_64bit}" = "y" ] ; then
-        cmake_generator="${cmake_generator} Win64"
-    fi
     tri_platform="win"
 fi
 

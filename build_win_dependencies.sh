@@ -750,8 +750,8 @@ if [ "${build_glad}" = "y" ] ; then
         
         python main.py \
                --generator=c \
-               --out-path=gl \
-               --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
+               --out-path=gl 
+        #               --extensions=GL_ARB_timer_query,GL_APPLE_rgb_422,GL_EXT_texture_compression_s3tc
         
         #python main.py --generator=c --out-path=gl 
 
@@ -897,7 +897,7 @@ if [ "${build_curl}" = "y" ] ; then
 
     # This snippet copies the lib + include files to the install dir after
     # the tmp.bat has been executed (see below).
-    if [ -d ${sd}/curl/builds ] ; then
+    if [ ! -d ${sd}/curl/builds ] ; then
         cd ${sd}/curl/builds/
         build_dir=`ls | sort -n | head -1`
         if [ -f ${build_dir}/lib/libcurl_a.lib ] ; then
