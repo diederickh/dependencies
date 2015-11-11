@@ -15,7 +15,7 @@
 # Make sure the user passes the correct architecture.
 if [ "${1}" = "" ] ; then
     echo ""
-    echo "Usage: ${0} [32,64] [debug] [makefile, xcode,vs2010,vs2012,vs2013,vs2015]"
+    echo "Usage: ${0} [32,64] [debug] [makefile,xcode,vs2010,vs2012,vs2013,vs2015]"
     echo ""
     echo "Example: compile 32bit version: ${0} 32 "
     echo "Example: compile 64bit version: ${0} 64 debug"
@@ -44,7 +44,8 @@ cmake_build_type="" # "Release" or "Debug", used for -DCMAKE_BUILD_TYPE
 cmake_build_config="" # "Release" or "Debug", used for `cmake --build . --config ${cmake_build_config}`
 debug_flag="" # Set to _debug when building a debug version. You can add _debug to your debug build targets.
 debugger="" # Set to the debugger, e.g. gdb or lldb
-build_dir="" # Set to the build dir, e.g. build.release or build.debug
+build_dir="" # Set to the build dir, e.g. build.release.xcode or build.debug.xcode, build.release.makefile, etc..
+build_system="" # Set to makefile, xcode, vs2010, vs2012, vs2013, vs2015, used to create the build dir
 
 for var in "$@" 
 do
@@ -52,16 +53,22 @@ do
         is_debug=y
     elif [ "${var}" = "makefile" ] ; then
         cmake_generator="Unix Makefiles"
-    elif [ "${var}" = "Xcode" ] ; then
+        build_system="makefile"
+    elif [ "${var}" = "xcode" ] ; then
         cmake_generator="Xcode"
+        build_system="xcode_project"
     elif [ "${var}" = "vs2010" ] ; then
         cmake_generator="Visual Studio 10 2010"
+        build_system="vs2010_project"
     elif [ "${var}" = "vs2012" ] ; then
         cmake_generator="Visual Studio 11 2012"
+        build_system="vs2012_project"
     elif [ "${var}" = "vs2013" ] ; then
         cmake_generator="Visual Studio 12 2014"
+        build_system="vs2013_project"
     elif [ "${var}" = "vs2015" ] ; then
         cmake_generator="Visual Studio 14 2015"
+        build_system="vs2015_project"
     fi
 done
 
@@ -86,7 +93,8 @@ if [ "$(uname)" = "Darwin" ]; then
     tri_platform="mac"
     tri_compiler="clang"
     if [ "${cmake_generator}" = "" ] ; then
-        cmake_generator="Xcode"
+        cmake_generator="Unix Makefiles"
+        build_system="makefile"
     fi
 elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     is_linux=y
@@ -94,6 +102,7 @@ elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     tri_compiler="gcc"
     if [ "${cmake_generator}" = "" ] ; then
         cmake_generator="Unix Makefiles"
+        build_system="makefile"
     fi
 elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
     # @todo detect what compiler is used
@@ -101,6 +110,7 @@ elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
 
     if [ "${vs}" = "2010" ] ; then
         tri_compiler="vs2010"
+        build_system="vs2010_project"
         if [ "${cmake_generator}" = "" ] ; then
             cmake_generator="Visual Studio 10 2010"
             if [ "${is_64bit}" = "y" ] ; then
@@ -109,6 +119,7 @@ elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
         fi
     elif [ "${vs}" = "2012" ] ; then
         tri_compiler="vs2012"
+        build_system="vs2012_project"
         if [ "${cmake_generator}" = "" ] ; then
             cmake_generator="Visual Studio 11 2012"
             if [ "${is_64bit}" = "y" ] ; then
@@ -117,6 +128,7 @@ elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
         fi
     elif [ "${vs}" = "2013" ] ; then
         tri_compiler="vs2013"
+        build_system="vs2013_project"
         if [ "${cmake_generator}" = "" ] ; then
             cmake_generator="Visual Studio 12 2013"
             if [ "${is_64bit}" = "y" ] ; then
@@ -139,8 +151,6 @@ fi
 # Set CFLAGS / LDFLAGS
 if [ "${architecture}" = "x86_64" ] || [ "${architecture}" = "" ] ; then
     if [ "${is_mac}" = "y" ] ; then
-        #extra_cflags=" -m64 -arch x86_64"
-        #extra_ldflags=" -arch x86_64 "
         extra_cflags=" -arch x86_64 "
         extra_ldflags=" -arch x86_64 "
     else
@@ -149,8 +159,6 @@ if [ "${architecture}" = "x86_64" ] || [ "${architecture}" = "" ] ; then
     fi
 else
     if [ "${is_mac}" = "y" ] ; then
-        #extra_cflags=" -m32 -arch i386 "
-        #extra_ldflags=" -arch i386 "
         extra_cflags=" -arch i386 "
         extra_ldflags=" -arch i386 "
     else
@@ -172,7 +180,7 @@ if [ "${is_debug}" = "y" ] ; then
     cmake_build_type="Debug"
     cmake_build_config="Debug"
     debug_flag="_debug"
-    build_dir="build.debug"
+    build_dir="build.debug.${build_system}"
 
     if [ "${is_mac}" = "y" ] ; then
         debugger="lldb"
@@ -182,7 +190,7 @@ if [ "${is_debug}" = "y" ] ; then
 else
     cmake_build_type="Release"
     cmake_build_config="Release"
-    build_dir="build.release"
+    build_dir="build.release.${build_system}"
 fi
 
 tri_triplet="${tri_platform}-${tri_compiler}-${tri_arch}"
