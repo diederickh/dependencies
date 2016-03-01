@@ -1647,7 +1647,6 @@ if [ "${build_curl}" = "y" ] ; then
         make
         make install
     fi
-    exit
 fi
 
 if [ "${build_jansson}" = "y" ] ; then 
