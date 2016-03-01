@@ -1,6 +1,6 @@
 #!/bin/sh
 set -x
-return
+#return
 # ----------------------------------------------------------------------- #
 #                                I N F O 
 # ----------------------------------------------------------------------- #
@@ -579,9 +579,9 @@ if [ "${build_pkgconfig}" = "y" ] ; then
     if [ ! -d ${sd}/pkgconfig ] ; then 
         cd ${sd}
         #curl -o pkg.tar.gz http://pkgconfig.freedesktop.org/releases/pkg-config-0.28.tar.gz
-        curl -o pkg.tar.gz https://pkg-config.freedesktop.org/releases/pkg-config-0.29.tar.gz
+        curl -o pkg.tar.gz https://pkg-config.freedesktop.org/releases/pkg-config-0.28.tar.gz
         tar -zxvf pkg.tar.gz
-        mv pkg-config-0.29 pkgconfig
+        mv pkg-config-0.28 pkgconfig
     fi
 fi
 
@@ -625,9 +625,10 @@ fi
 if [ "${build_curl}" = "y" ] ; then
     if [ ! -d ${sd}/curl ] ; then
         cd ${sd}
-        curl -o curl.tar.gz http://curl.haxx.se/download/curl-7.37.1.tar.gz
+        curl -o curl.tar.gz https://curl.haxx.se/download/curl-7.47.1.tar.gz
+        #http://curl.haxx.se/download/curl-7.37.1.tar.gz
         tar -zxvf curl.tar.gz
-        mv curl-7.37.1 curl
+        mv curl-7.47.1 curl
     fi
 fi
 
@@ -1169,7 +1170,8 @@ if [ "${build_gtkdoc}" = "y" ] ; then
 fi
 
 # Compile pkg config
-if [ "${build_pkgconfig}" = "y" ] ; then 
+if [ "${build_pkgconfig}" = "y" ] ; then
+
     if [ ! -f ${bd}/bin/pkg-config ] ; then 
         cd ${sd}/pkgconfig
         ./configure --prefix=${bd} --with-internal-glib
@@ -1575,19 +1577,19 @@ fi
 # Compile harfbuzz 
 if [ "${build_harfbuzz}" = "y" ] ; then
 
-    if [ "${is_mac}" = "y" ] ; then
-        echo ""
-        echo "==========================================="
-        echo ""
-        echo "HARFBUZZ DOES NOT COMPILE EASILY WITH FREETYPE ON MAC."
-        echo ""
-        echo "USE THIS SCRIPT: https://gist.github.com/roxlu/55febd64e813491161d1"
-        echo ""
-        echo "==========================================="
-        exit
-    fi
-
     if [ ! -f ${bd}/lib/libharfbuzz.a ] ; then
+
+        if [ "${is_mac}" = "y" ] ; then
+            echo ""
+            echo "==========================================="
+            echo ""
+            echo "HARFBUZZ DOES NOT COMPILE EASILY WITH FREETYPE ON MAC."
+            echo ""
+            echo "USE THIS SCRIPT: https://gist.github.com/roxlu/55febd64e813491161d1"
+            echo ""
+            echo "==========================================="
+            exit
+        fi
 
         cd ${sd}/harfbuzz
         
@@ -1645,6 +1647,7 @@ if [ "${build_curl}" = "y" ] ; then
         make
         make install
     fi
+    exit
 fi
 
 if [ "${build_jansson}" = "y" ] ; then 
