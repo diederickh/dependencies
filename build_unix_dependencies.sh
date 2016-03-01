@@ -1,5 +1,6 @@
 #!/bin/sh
- set -x
+set -x
+return
 # ----------------------------------------------------------------------- #
 #                                I N F O 
 # ----------------------------------------------------------------------- #
@@ -577,9 +578,10 @@ if [ "${build_pkgconfig}" = "y" ] ; then
     
     if [ ! -d ${sd}/pkgconfig ] ; then 
         cd ${sd}
-        curl -o pkg.tar.gz http://pkgconfig.freedesktop.org/releases/pkg-config-0.28.tar.gz
+        #curl -o pkg.tar.gz http://pkgconfig.freedesktop.org/releases/pkg-config-0.28.tar.gz
+        curl -o pkg.tar.gz https://pkg-config.freedesktop.org/releases/pkg-config-0.29.tar.gz
         tar -zxvf pkg.tar.gz
-        mv pkg-config-0.28 pkgconfig
+        mv pkg-config-0.29 pkgconfig
     fi
 fi
 
@@ -726,7 +728,7 @@ if [ "${build_harfbuzz}" = "y" ] ; then
     
     if [ ! -d ${sd}/harfbuzz ] ; then
         cd ${sd}
-        curl -o hb.tar.bz2 http://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.37.tar.bz2
+        curl -o hb.tar.bz2 https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.37.tar.bz2
         bunzip2 hb.tar.bz2
         tar -xvf hb.tar
         mv harfbuzz-0.9.37 harfbuzz
@@ -1265,7 +1267,6 @@ if [ "${build_glad}" = "y" ] ; then
     fi
 fi
 
-
 # Compile glfw
 if [ "${build_glfw}" = "y" ] ; then
     if [ ! -f ${bd}/lib/libglfw3.a ] ; then
@@ -1572,7 +1573,19 @@ if [ "${build_freetype}" = "y" ] ; then
 fi
 
 # Compile harfbuzz 
-if [ "${build_harfbuzz}" = "y" ] ; then 
+if [ "${build_harfbuzz}" = "y" ] ; then
+
+    if [ "${is_mac}" = "y" ] ; then
+        echo ""
+        echo "==========================================="
+        echo ""
+        echo "HARFBUZZ DOES NOT COMPILE EASILY WITH FREETYPE ON MAC."
+        echo ""
+        echo "USE THIS SCRIPT: https://gist.github.com/roxlu/55febd64e813491161d1"
+        echo ""
+        echo "==========================================="
+        exit
+    fi
 
     if [ ! -f ${bd}/lib/libharfbuzz.a ] ; then
 
@@ -1587,7 +1600,7 @@ if [ "${build_harfbuzz}" = "y" ] ; then
         fi
 
         export FREETYPE_CFLAGS="-I${bd}/include/ -I${bd}/include/freetype2 -L${bd}/lib/" 
-        export FREETYPE_LIBS="-lfreetype"
+        export FREETYPE_LIBS="-L${bd}/lib/ -l${bd}/lib/libfreetype.a"
 
         if [ "${is_mac}" = "y" ] ; then
             export LDFLAGS="-v -L${bd}/lib -lz -lpng -lbz2"
