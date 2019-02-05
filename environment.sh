@@ -74,7 +74,7 @@ do
         build_system="vs2015_project"
         vs="${var#vs}"
     elif [ "${var}" = "vs2017" ] ; then
-        cmake_generator="Visual Studio 15 2017"
+        cmake_generator=""
         build_system="vs2017_project"
         vs="${var#vs}"
     fi
