@@ -60,15 +60,23 @@ do
     elif [ "${var}" = "vs2010" ] ; then
         cmake_generator="Visual Studio 10 2010"
         build_system="vs2010_project"
+        vs="${var#vs}"
     elif [ "${var}" = "vs2012" ] ; then
         cmake_generator="Visual Studio 11 2012"
         build_system="vs2012_project"
+        vs="${var#vs}"
     elif [ "${var}" = "vs2013" ] ; then
         cmake_generator="Visual Studio 12 2014"
         build_system="vs2013_project"
+        vs="${var#vs}"
     elif [ "${var}" = "vs2015" ] ; then
         cmake_generator="Visual Studio 14 2015"
         build_system="vs2015_project"
+        vs="${var#vs}"
+    elif [ "${var}" = "vs2017" ] ; then
+        cmake_generator=""
+        build_system="vs2017_project"
+        vs="${var#vs}"
     fi
 done
 
@@ -104,7 +112,7 @@ elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
         cmake_generator="Unix Makefiles"
         build_system="makefile"
     fi
-elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
+elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ] || [ "$(expr substr $(uname -s) 1 10)" = "MINGW64_NT" ]; then
     # @todo detect what compiler is used
     is_win="y"
 
@@ -131,6 +139,15 @@ elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
         build_system="vs2013_project"
         if [ "${cmake_generator}" = "" ] ; then
             cmake_generator="Visual Studio 12 2013"
+            if [ "${is_64bit}" = "y" ] ; then
+                cmake_generator="${cmake_generator} Win64"
+            fi
+        fi
+    elif [ "${vs}" = "2017" ] ; then
+        tri_compiler="vs2017"
+        build_system="vs2017_project"
+        if [ "${cmake_generator}" = "" ] ; then
+            cmake_generator="Visual Studio 15 2017"
             if [ "${is_64bit}" = "y" ] ; then
                 cmake_generator="${cmake_generator} Win64"
             fi
